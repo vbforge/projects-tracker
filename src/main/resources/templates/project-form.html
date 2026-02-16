@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" data-bs-theme="light">
+
+<head>
+    <th:block th:replace="~{fragments :: head-common}"></th:block>
+    <title th:text="${project.id != null ? 'Edit Project' : 'New Project'}">Project Form</title>
+    <link rel="stylesheet" href="/css/dashboard-styles.css"/>
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .form-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-base);
+        }
+
+        @media (max-width: 767px) {
+            .form-container {
+                margin: 1rem auto;
+            }
+
+            .form-card {
+                padding: 1.5rem;
+            }
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control,
+        .form-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: all var(--transition-fast);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: var(--bg-secondary);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Validation styles */
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: var(--danger);
+            background-image: none;
+        }
+
+        .form-control.is-invalid:focus,
+        .form-select.is-invalid:focus {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-check-input {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-color);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+        }
+
+        .tags-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            max-height: 250px;
+            overflow-y: auto;
+            transition: all var(--transition-fast);
+        }
+
+        .tags-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tags-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .form-check {
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: background-color var(--transition-fast);
+        }
+
+        .form-check:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .tag-check {
+            padding-left: 20px;
+            margin-bottom: 6px;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 50px;
+            color: #fff;
+            font-weight: 500;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 1.5rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .required-field::after {
+            content: ' *';
+            color: var(--danger);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 575px) {
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app-wrapper">
+
+    <!-- Navbar -->
+    <nav th:replace="~{fragments :: navbar('projects')}"></nav>
+
+    <!-- Main Form Content -->
+    <div class="form-container">
+
+        <div class="form-card fade-in">
+
+            <!-- Flash Messages success -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${success}">Success message</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Flash Messages error -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${error}">Error message</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h2 class="mb-0">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    <span th:text="${project.id != null ? 'Edit Project' : 'Create New Project'}">New Project</span>
+                </h2>
+                <a th:href="@{/projects}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Projects
+                </a>
+            </div>
+
+            <!-- Form to add/update -->
+            <form th:action="${project.id != null ? '/projects/' + project.id + '/update' : '/projects/add'}"
+                  th:object="${project}" method="post" novalidate>
+
+                <!-- Basic Information -->
+                <div class="form-section-title">
+                    <i class="bi bi-info-circle me-2"></i>Basic Information
+                </div>
+
+                <!-- Title -->
+                <div class="mb-3">
+                    <label for="title" class="form-label required-field">Project Title</label>
+                    <input type="text"
+                           class="form-control"
+                           id="title"
+                           th:field="*{title}"
+                           th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
+                           placeholder="Enter project name"
+                           required>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">
+                        Title error
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control"
+                              id="description"
+                              th:field="*{description}"
+                              th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                              rows="4"
+                              placeholder="Describe your project..."></textarea>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">
+                        Description error
+                    </div>
+                </div>
+
+                <!-- Status and GitHub -->
+                <div class="row align-items-center">
+                    <div class="col-md-6 mb-3">
+                        <label for="status" class="form-label required-field">Status</label>
+                        <select class="form-select"
+                                id="status"
+                                th:field="*{status}"
+                                th:classappend="${#fields.hasErrors('status')} ? 'is-invalid' : ''"
+                                required>
+                            <option th:each="s : ${statuses}"
+                                    th:value="${s}"
+                                    th:text="${s.name().replace('_', ' ')}"
+                                    th:selected="${s == project.status}">
+                            </option>
+                        </select>
+                        <div class="invalid-feedback" th:if="${#fields.hasErrors('status')}" th:errors="*{status}">
+                            Status error
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3 ps-md-5">
+                        <label class="form-label d-block">GitHub</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="onGithub" th:field="*{onGithub}">
+                            <label class="form-check-label" for="onGithub">
+                                <i class="bi bi-github me-1"></i> Project on GitHub
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Information -->
+                <div class="form-section-title">
+                    <i class="bi bi-geo-alt me-2"></i>Location
+                </div>
+
+                <!-- GitHub URL -->
+                <div class="mb-3">
+                    <label for="githubUrl" class="form-label">
+                        <i class="bi bi-github me-1"></i> GitHub URL
+                    </label>
+                    <input type="url"
+                           class="form-control"
+                           id="githubUrl"
+                           th:field="*{githubUrl}"
+                           th:classappend="${#fields.hasErrors('githubUrl')} ? 'is-invalid' : ''"
+                           placeholder="https://github.com/username/repo">
+                    <small class="text-muted">Leave empty if project is not on GitHub</small>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('githubUrl')}" th:errors="*{githubUrl}">
+                        GitHub URL error
+                    </div>
+                </div>
+
+                <!-- Local Path -->
+                <div class="mb-3">
+                    <label for="localPath" class="form-label">
+                        <i class="bi bi-folder me-1"></i> Local Path
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="localPath"
+                           th:field="*{localPath}"
+                           th:classappend="${#fields.hasErrors('localPath')} ? 'is-invalid' : ''"
+                           placeholder="C:\Users\username\Desktop\Projects\project-name">
+                    <small class="text-muted">Path to your local project directory</small>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('localPath')}" th:errors="*{localPath}">
+                        Local path error
+                    </div>
+                </div>
+
+                <!-- Tags label -->
+                <div class="form-section-title">
+                    <i class="bi bi-tags me-2"></i>Tags
+                </div>
+
+                <!-- Tags selection container -->
+                <div class="mb-3">
+                    <label class="form-label">Select Tags</label>
+
+                    <div class="tags-container p-2">
+
+                        <!-- if no tags -->
+                        <div th:if="${allTags == null || allTags.isEmpty()}" class="text-center text-muted py-3">
+                            <i class="bi bi-inbox fs-3"></i>
+                            <p class="mb-0 mt-2">No tags available. <a th:href="@{/tags}">Create tags first</a></p>
+                        </div>
+
+                        <!-- selection tags -->
+                        <div th:if="${allTags != null && !allTags.isEmpty()}">
+
+                            <div th:each="tag : ${allTags}" class="form-check tag-check">
+                                <input class="form-check-input" type="checkbox"
+                                       th:id="'tag-' + ${tag.id}"
+                                       name="tagIds"
+                                       th:value="${tag.id}"
+                                       th:checked="${project.tagIds != null && project.tagIds.contains(tag.id)}">
+                                <label class="form-check-label align-items-center gap-2"
+                                       th:for="'tag-' + ${tag.id}">
+                                        <span class="tag-badge"
+                                              th:style="'background-color: ' + ${tag.color}"
+                                              th:text="${tag.name}">
+                                        </span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Select all tags that apply to this project
+                    </small>
+
+                </div>
+
+                <!-- Tasks -->
+                <div class="form-section-title">
+                    <i class="bi bi-list-check me-2"></i>Tasks & Notes
+                </div>
+
+                <!-- What To Do -->
+                <div class="mb-3">
+                    <label for="whatTodo" class="form-label">What To Do</label>
+                    <textarea class="form-control"
+                              id="whatTodo"
+                              th:field="*{whatTodo}"
+                              th:classappend="${#fields.hasErrors('whatTodo')} ? 'is-invalid' : ''"
+                              rows="4"
+                              placeholder="List tasks, improvements, or notes about this project..."></textarea>
+                    <small class="text-muted">Track what needs to be done next</small>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('whatTodo')}" th:errors="*{whatTodo}">
+                        What to do error
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <a th:href="@{/projects}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary ms-auto">
+                        <i class="bi bi-save me-1"></i>
+                        <span th:text="${project.id != null ? 'Update Project' : 'Create Project'}">Save</span>
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments :: footer}"></footer>
+
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{fragments :: scripts-common}"></th:block>
+
+</body>
+</html>
