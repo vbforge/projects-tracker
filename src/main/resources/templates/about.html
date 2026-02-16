@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" data-bs-theme="light">
+<head>
+    <th:block th:replace="~{fragments :: head-common}"></th:block>
+    <title>About - Projects Tracker</title>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- Navbar -->
+    <nav th:replace="~{fragments :: navbar('about')}"></nav>
+
+    <!-- Main Content -->
+    <div class="app-content">
+        <div class="page-container">
+            <div class="content-card fade-in">
+                <h1 class="mb-4">
+                    <i class="bi bi-info-circle text-primary me-2"></i>
+                    About Projects Tracker
+                </h1>
+
+                <p class="lead">
+                    A modern, intuitive project management application built with Spring Boot and Thymeleaf.
+                </p>
+
+                <hr class="my-4">
+
+                <h3 class="mb-3">Features</h3>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Create and manage projects</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Tag-based organization</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Advanced filtering and sorting</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Export to CSV and HTML</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Dark mode support</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Responsive design</li>
+                </ul>
+
+                <h3 class="mt-4 mb-3">Technology Stack</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded">
+                            <h5><i class="bi bi-server text-primary"></i> Backend</h5>
+                            <ul>
+                                <li>Spring Boot 3</li>
+                                <li>Spring Data JPA</li>
+                                <li>Thymeleaf</li>
+                                <li>MySQL / H2 Database</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded">
+                            <h5><i class="bi bi-palette text-success"></i> Frontend</h5>
+                            <ul>
+                                <li>Bootstrap 5</li>
+                                <li>Bootstrap Icons</li>
+                                <li>Custom CSS</li>
+                                <li>JavaScript (ES6+)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="mt-4 mb-3">Version</h3>
+                <p>
+                    <span class="badge bg-primary">v1.0.0</span>
+                    <span class="text-muted ms-2">Released: February 2026</span>
+                </p>
+
+                <div class="mt-4">
+                    <a th:href="@{/projects}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments :: footer}"></footer>
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{fragments :: scripts-common}"></th:block>
+
+</body>
+</html>

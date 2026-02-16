@@ -38,9 +38,6 @@ public class CustomErrorController implements ErrorController {
             } else if (statusCode == HttpStatus.FORBIDDEN.value()) {
                 model.addAttribute("errorMessage", "Access Denied - You don't have permission to access this resource");
                 return "error/403";
-            } else if (statusCode == HttpStatus.BAD_REQUEST.value()) {
-                model.addAttribute("errorMessage", "Bad Request - The request could not be understood by the server");
-                return "error/400";
             }
         }
         

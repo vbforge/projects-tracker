@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" data-bs-theme="light">
+<head>
+    <th:block th:replace="~{fragments :: head-common}"></th:block>
+    <title>Help - Projects Tracker</title>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- Navbar -->
+    <nav th:replace="~{fragments :: navbar('help')}"></nav>
+
+    <!-- Main Content -->
+    <div class="app-content">
+        <div class="page-container">
+            <div class="content-card fade-in">
+                <h1 class="mb-4">
+                    <i class="bi bi-question-circle text-primary me-2"></i>
+                    Help & Documentation
+                </h1>
+
+                <div class="accordion" id="helpAccordion">
+                    
+                    <!-- Getting Started -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                <i class="bi bi-rocket-takeoff me-2"></i> Getting Started
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <h5>Creating Your First Project</h5>
+                                <ol>
+                                    <li>Click the <strong>"Add New"</strong> button in the navbar</li>
+                                    <li>Select <strong>"New Project"</strong></li>
+                                    <li>Fill in the project details (title is required)</li>
+                                    <li>Select appropriate tags</li>
+                                    <li>Click <strong>"Create Project"</strong></li>
+                                </ol>
+                                <p class="mb-0 mt-3">
+                                    <i class="bi bi-lightbulb text-warning me-1"></i>
+                                    <strong>Tip:</strong> Use tags to organize your projects by technology, client, or category.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Managing Projects -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                <i class="bi bi-folder me-2"></i> Managing Projects
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <h5>Project Status</h5>
+                                <ul>
+                                    <li><span class="badge badge-not-started">Not Started</span> - Project is planned but not begun</li>
+                                    <li><span class="badge badge-in-progress">In Progress</span> - Currently working on this project</li>
+                                    <li><span class="badge badge-done">Done</span> - Project is completed</li>
+                                </ul>
+                                
+                                <h5 class="mt-3">Viewing Projects</h5>
+                                <p>Toggle between <strong>Card View</strong> and <strong>List View</strong> using the buttons in the toolbar.</p>
+                                
+                                <h5 class="mt-3">Editing & Deleting</h5>
+                                <p>Click on a project card to view details, then use the <strong>Edit</strong> or <strong>Delete</strong> buttons.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filtering & Searching -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                <i class="bi bi-funnel me-2"></i> Filtering & Searching
+                            </button>
+                        </h2>
+                        <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <h5>Search Bar</h5>
+                                <p>Use the search bar in the navbar to find projects by title.</p>
+                                
+                                <h5 class="mt-3">Advanced Filters</h5>
+                                <ul>
+                                    <li><strong>Status:</strong> Filter by NOT_STARTED, IN_PROGRESS, or DONE</li>
+                                    <li><strong>GitHub:</strong> Show only projects on GitHub or local only</li>
+                                    <li><strong>Tags:</strong> Click tag badges to filter by technology</li>
+                                    <li><strong>Dates:</strong> Filter by creation month or last worked month</li>
+                                </ul>
+                                
+                                <h5 class="mt-3">Sorting</h5>
+                                <p>Sort projects by:</p>
+                                <ul>
+                                    <li>Last Worked (most recent first)</li>
+                                    <li>Created Date (newest first)</li>
+                                    <li>Title (A-Z)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                                <i class="bi bi-tags me-2"></i> Working with Tags
+                            </button>
+                        </h2>
+                        <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <h5>Creating Tags</h5>
+                                <ol>
+                                    <li>Go to the <strong>Tags</strong> page</li>
+                                    <li>Enter a tag name (e.g., "Spring Boot")</li>
+                                    <li>Choose a color</li>
+                                    <li>Click <strong>"Create Tag"</strong></li>
+                                </ol>
+                                
+                                <h5 class="mt-3">Best Practices</h5>
+                                <ul>
+                                    <li>Use consistent naming (e.g., "React" not "react" or "ReactJS")</li>
+                                    <li>Choose distinct colors for easy recognition</li>
+                                    <li>Create tags for technologies, clients, or project types</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exporting -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive">
+                                <i class="bi bi-download me-2"></i> Exporting Data
+                            </button>
+                        </h2>
+                        <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <h5>Export Options</h5>
+                                <ul>
+                                    <li><strong>CSV:</strong> For spreadsheet programs (Excel, Google Sheets)</li>
+                                    <li><strong>HTML Report:</strong> Styled report with statistics</li>
+                                </ul>
+                                
+                                <p class="mt-3">
+                                    <i class="bi bi-info-circle text-info me-1"></i>
+                                    Exports respect your current filters! Apply filters before exporting to get specific data.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dark Mode -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix">
+                                <i class="bi bi-moon-stars me-2"></i> Dark Mode
+                            </button>
+                        </h2>
+                        <div id="collapseSix" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <p>Click the <i class="bi bi-moon-stars-fill"></i> / <i class="bi bi-sun-fill"></i> button in the navbar to toggle between light and dark modes.</p>
+                                <p class="mb-0">Your preference is saved automatically and will be remembered on your next visit.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mt-4 p-3 bg-light rounded" style="--bs-bg-opacity: .5;">
+                    <h5><i class="bi bi-envelope me-2"></i> Need More Help?</h5>
+                    <p class="mb-2">Can't find what you're looking for? Get in touch:</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="https://github.com/vbforge" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-github me-1"></i> GitHub
+                        </a>
+                        <a href="https://www.linkedin.com/in/vlad-bogdantsev-7897662b2/" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-linkedin me-1"></i> LinkedIn
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a th:href="@{/projects}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Projects
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments :: footer}"></footer>
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{fragments :: scripts-common}"></th:block>
+
+</body>
+</html>

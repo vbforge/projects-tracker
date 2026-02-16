@@ -3,164 +3,29 @@
 <head>
     <th:block th:replace="~{fragments :: head-common}"></th:block>
     <title th:text="${project.title}">Project Details</title>
-    <link rel="stylesheet" href="/css/dashboard-styles.css"/>
-    <style>
-        .detail-container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .detail-card {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            box-shadow: var(--shadow-sm);
-            transition: all var(--transition-base);
-        }
-
-        @media (max-width: 767px) {
-            .detail-container {
-                margin: 1rem auto;
-            }
-
-            .detail-card {
-                padding: 1.5rem;
-            }
-        }
-
-        .info-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .info-value {
-            color: var(--text-primary);
-            padding-left: 0.25rem;
-        }
-
-        .tag-badge {
-            background-color: #e7f3ff;
-            color: #000000;
-            padding: 0.5rem 1rem;
-            border-radius: 1.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-            display: inline-block;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .status-badge {
-            padding: 0.5rem 1.25rem;
-            border-radius: 1.5rem;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .github-link {
-            color: var(--primary);
-            text-decoration: none;
-            word-break: break-all;
-        }
-
-        .github-link:hover {
-            text-decoration: underline;
-        }
-
-        .todo-alert {
-            background: rgba(13, 110, 253, 0.05);
-            border-left: 3px solid var(--primary);
-            padding: 1rem;
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            color: var(--text-primary);
-        }
-
-        [data-bs-theme="dark"] .todo-alert {
-            background: rgba(13, 110, 253, 0.1);
-        }
-
-        .date-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            text-align: center;
-            transition: all var(--transition-fast);
-        }
-
-        .date-card:hover {
-            box-shadow: var(--shadow-sm);
-            transform: translateY(-2px);
-        }
-
-        .date-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-
-        .date-value {
-            font-size: 0.95rem;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 575px) {
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .action-buttons .btn {
-                width: 100%;
-            }
-        }
-    </style>
 </head>
 <body>
 
-<div class="app-wrapper">
+<div class="app-layout">
 
     <!-- Navbar -->
     <nav th:replace="~{fragments :: navbar('projects')}"></nav>
 
-    <!-- Main Card Content -->
-        <div class="detail-container">
-            <div class="detail-card fade-in">
+    <!-- Main Content -->
+    <div class="app-content">
+        <div class="page-container">
+            <div class="content-card fade-in">
 
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
                     <div class="flex-grow-1">
-                        <h2 class="mb-2" th:text="${project.title}">Project Title</h2>
-                        <br>
-                        <span class="status-badge"
-                              th:classappend="${project.status.name() == 'DONE'} ? 'bg-success text-white' :
-                                         (${project.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' : 'bg-danger text-white')"
+                        <h2 class="mb-3" th:text="${project.title}">Project Title</h2>
+                        <span class="badge-status"
+                              th:classappend="${project.status.name() == 'DONE'} ? 'badge-done' :
+                                         (${project.status.name() == 'IN_PROGRESS'} ? 'badge-in-progress' : 'badge-not-started')"
                               th:text="${project.status.name().replace('_', ' ')}">
-                        Status
-                    </span>
+                            Status
+                        </span>
                     </div>
                     <div class="d-flex gap-2">
                         <a th:href="@{/projects}" class="btn btn-outline-secondary">
@@ -175,77 +40,65 @@
                 <hr>
 
                 <!-- Description -->
-                <div class="info-section">
-                    <div class="info-label">
+                <div class="mb-4">
+                    <h5 class="text-secondary mb-2">
                         <i class="bi bi-file-text"></i> Description
-                    </div>
-                    <div class="info-value">
-                        <p th:text="${project.description}" class="mb-0">Project description goes here</p>
-                    </div>
+                    </h5>
+                    <p th:text="${project.description}" class="mb-0">Project description goes here</p>
                 </div>
 
                 <!-- Tags -->
-                <div class="info-section" th:if="${project.tags != null && !project.tags.isEmpty()}">
-                    <div class="info-label">
+                <div class="mb-4" th:if="${project.tags != null && !project.tags.isEmpty()}">
+                    <h5 class="text-secondary mb-2">
                         <i class="bi bi-tags"></i> Tags
-                    </div>
-                    <div class="info-value">
-                    <span th:each="tag : ${project.tags}"
-                          class="tag-badge"
-                          th:style="'background-color: ' + ${tag.color}"
-                          th:text="${tag.name}">
-                    </span>
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span th:each="tag : ${project.tags}"
+                              class="tag-badge"
+                              th:style="'background-color: ' + ${tag.color}"
+                              th:text="${tag.name}">
+                        </span>
                     </div>
                 </div>
 
                 <!-- GitHub Info -->
-                <div class="row mb-4">
+                <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <div class="info-section">
-                            <div class="info-label">
-                                <i class="bi bi-github"></i> GitHub Status
-                            </div>
-                            <div class="info-value">
-                            <span th:if="${project.onGithub}" class="badge bg-dark">
-                                <i class="bi bi-check-circle"></i> On GitHub
-                            </span>
-                                <span th:unless="${project.onGithub}" class="badge bg-secondary">
-                                <i class="bi bi-x-circle"></i> Not on GitHub
-                            </span>
-                            </div>
-                        </div>
+                        <h5 class="text-secondary mb-2">
+                            <i class="bi bi-github"></i> GitHub Status
+                        </h5>
+                        <span th:if="${project.onGithub}" class="badge bg-dark">
+                            <i class="bi bi-check-circle"></i> On GitHub
+                        </span>
+                        <span th:unless="${project.onGithub}" class="badge bg-secondary">
+                            <i class="bi bi-x-circle"></i> Not on GitHub
+                        </span>
                     </div>
                     <div class="col-md-6" th:if="${project.githubUrl != null && !project.githubUrl.isEmpty()}">
-                        <div class="info-section">
-                            <div class="info-label">
-                                <i class="bi bi-link-45deg"></i> GitHub URL
-                            </div>
-                            <div class="info-value">
-                                <a th:href="${project.githubUrl}" target="_blank" class="github-link">
-                                    <span th:text="${project.githubUrl}">URL</span>
-                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
-                                </a>
-                            </div>
-                        </div>
+                        <h5 class="text-secondary mb-2">
+                            <i class="bi bi-link-45deg"></i> GitHub URL
+                        </h5>
+                        <a th:href="${project.githubUrl}" target="_blank" class="github-link">
+                            <span th:text="${project.githubUrl}">URL</span>
+                            <i class="bi bi-box-arrow-up-right ms-1"></i>
+                        </a>
                     </div>
                 </div>
 
                 <!-- Local Path -->
-                <div class="info-section" th:if="${project.localPath != null && !project.localPath.isEmpty()}">
-                    <div class="info-label">
+                <div class="mb-4" th:if="${project.localPath != null && !project.localPath.isEmpty()}">
+                    <h5 class="text-secondary mb-2">
                         <i class="bi bi-folder"></i> Local Path
-                    </div>
-                    <div class="info-value">
-                        <code th:text="${project.localPath}">C:\Projects\project-name</code>
-                    </div>
+                    </h5>
+                    <code th:text="${project.localPath}">C:\Projects\project-name</code>
                 </div>
 
                 <!-- What To Do -->
-                <div class="info-section" th:if="${project.whatTodo != null && !project.whatTodo.isEmpty()}">
-                    <div class="info-label">
+                <div class="mb-4" th:if="${project.whatTodo != null && !project.whatTodo.isEmpty()}">
+                    <h5 class="text-secondary mb-2">
                         <i class="bi bi-list-check"></i> What To Do
-                    </div>
-                    <div class="todo-alert">
+                    </h5>
+                    <div class="project-todo">
                         <p th:text="${project.whatTodo}" class="mb-0" style="white-space: pre-wrap;"></p>
                     </div>
                 </div>
@@ -253,11 +106,11 @@
                 <!-- Dates -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
-                        <div class="date-card">
-                            <div class="date-label">
+                        <div class="p-3 border rounded text-center bg-light" style="--bs-bg-opacity: .3;">
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-calendar-plus"></i> Created
                             </div>
-                            <div class="date-value" th:text="${#temporals.format(project.createdDate, 'MMM dd, yyyy')}">
+                            <div class="fw-bold" th:text="${#temporals.format(project.createdDate, 'MMM dd, yyyy')}">
                                 Date
                             </div>
                             <small class="text-muted"
@@ -265,11 +118,11 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="date-card">
-                            <div class="date-label">
+                        <div class="p-3 border rounded text-center bg-light" style="--bs-bg-opacity: .3;">
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-clock-history"></i> Last Worked
                             </div>
-                            <div class="date-value"
+                            <div class="fw-bold"
                                  th:text="${#temporals.format(project.lastWorkedOn, 'MMM dd, yyyy')}">Date
                             </div>
                             <small class="text-muted"
@@ -277,11 +130,11 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="date-card">
-                            <div class="date-label">
+                        <div class="p-3 border rounded text-center bg-light" style="--bs-bg-opacity: .3;">
+                            <div class="text-muted small text-uppercase fw-semibold mb-1">
                                 <i class="bi bi-pencil-square"></i> Updated
                             </div>
-                            <div class="date-value" th:text="${#temporals.format(project.updatedAt, 'MMM dd, yyyy')}">
+                            <div class="fw-bold" th:text="${#temporals.format(project.updatedAt, 'MMM dd, yyyy')}">
                                 Date
                             </div>
                             <small class="text-muted"
@@ -292,8 +145,8 @@
 
                 <!-- Actions -->
                 <hr>
-                <div class="action-buttons">
-                    <form th:action="@{/projects/{id}/delete(id=${project.id})}" method="post">
+                <div class="d-flex gap-2 flex-wrap">
+                    <form th:action="@{/projects/{id}/delete(id=${project.id})}" method="post" class="d-inline">
                         <button type="submit" class="btn btn-danger"
                                 onclick="return confirm('Are you sure you want to delete this project? This action cannot be undone.')">
                             <i class="bi bi-trash"></i> Delete Project
@@ -306,9 +159,10 @@
                         <i class="bi bi-arrow-left"></i> Back to Projects
                     </a>
                 </div>
-            </div>
 
+            </div>
         </div>
+    </div>
 
     <!-- Footer -->
     <footer th:replace="~{fragments :: footer}"></footer>

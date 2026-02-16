@@ -1,102 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" data-bs-theme="light">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Tracker - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/dashboard-styles.css"/>
+    <th:block th:replace="~{fragments :: head-common}"></th:block>
+    <title>Dashboard</title>
 </head>
 
 <body>
 
-<div class="app-wrapper">
+<div class="app-layout">
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg app-navbar">
-        <div class="container-fluid px-4">
-
-            <!-- Brand -->
-            <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
-                <i class="bi bi-kanban-fill me-2 brand-icon"></i>
-                <span class="brand-text">Project Tracker</span>
-            </a>
-
-            <!-- Mobile Toggle -->
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#mainNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="mainNavbar">
-
-                <!-- Left Navigation -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link active" th:href="@{/}">
-                            <i class="bi bi-speedometer2 me-1"></i>
-                            <span class="nav-text">Dashboard</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/projects}">
-                            <i class="bi bi-folder2-open me-1"></i>
-                            <span class="nav-text">Projects</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/tags}">
-                            <i class="bi bi-tags me-1"></i>
-                            <span class="nav-text">Tags</span>
-                        </a>
-                    </li>
-                </ul>
-
-                <!-- Search Bar -->
-                <form class="d-flex me-3 search-form" th:action="@{/projects}" method="get">
-                    <div class="input-group input-group-sm search-wrapper">
-                        <span class="input-group-text border-0 bg-transparent">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input class="form-control border-0 search-input"
-                               type="search"
-                               name="search"
-                               placeholder="Search projects..."
-                               th:value="${searchTerm}">
-                    </div>
-                </form>
-
-                <!-- Right Side Buttons -->
-                <div class="d-flex align-items-center gap-2">
-
-                    <!-- Theme Toggle -->
-                    <button class="btn btn-theme" id="themeToggle" title="Toggle Dark Mode">
-                        <i class="bi bi-moon-stars-fill theme-icon-dark"></i>
-                        <i class="bi bi-sun-fill theme-icon-light d-none"></i>
-                    </button>
-
-                    <!-- Quick Add Dropdown -->
-                    <div class="dropdown">
-                        <button class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="bi bi-plus-circle me-1"></i>
-                            <span class="d-none d-md-inline">Add New</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" th:href="@{/projects/new}">
-                                <i class="bi bi-folder-plus me-2 text-primary"></i> New Project
-                            </a></li>
-                            <li><a class="dropdown-item" th:href="@{/tags}">
-                                <i class="bi bi-tag-fill me-2 text-success"></i> New Tag
-                            </a></li>
-                        </ul>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- Navbar -->
+    <nav th:replace="~{fragments :: navbar('projects')}"></nav>
 
     <!-- Main Content -->
     <div class="app-content">
@@ -235,8 +150,8 @@
                     Projects
                     <span class="badge bg-secondary ms-2" th:text="${projects != null ? projects.size() : 0}">0</span>
                     <span th:if="${hasActiveFilters}" class="badge bg-primary ms-1">
-                <i class="bi bi-funnel-fill"></i> Filtered
-            </span>
+                        <i class="bi bi-funnel-fill"></i> Filtered
+                    </span>
                 </h5>
             </div>
             <div class="toolbar-right">
@@ -252,14 +167,14 @@
                     </button>
                 </div>
 
-                <!-- Sort Dropdown - ALWAYS PRESERVE FILTERS -->
+                <!-- Sort Dropdown -->
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                         <i class="bi bi-sort-down"></i>
                         <span class="d-none d-md-inline ms-1">
-                    Sort:
-                    <span th:text="${sortBy == 'created' ? 'Created' : (sortBy == 'title' ? 'Title' : 'Last Worked')}">Last Worked</span>
-                </span>
+                            Sort:
+                            <span th:text="${sortBy == 'created' ? 'Created' : (sortBy == 'title' ? 'Title' : 'Last Worked')}">Last Worked</span>
+                        </span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
@@ -359,12 +274,10 @@
                     </ul>
                 </div>
 
-
-
             </div>
         </div>
 
-        <!-- Filters + Tags section -->
+        <!-- Filters Section -->
         <div class="filter-section">
             <form th:action="@{/projects}" method="get">
 
@@ -388,12 +301,8 @@
                         </label>
                         <select class="form-select form-select-sm" name="status">
                             <option value="">Project Status</option>
-                            <option value="NOT_STARTED" th:selected="${selectedStatus?.name() == 'NOT_STARTED'}">Not
-                                Started
-                            </option>
-                            <option value="IN_PROGRESS" th:selected="${selectedStatus?.name() == 'IN_PROGRESS'}">In
-                                Progress
-                            </option>
+                            <option value="NOT_STARTED" th:selected="${selectedStatus?.name() == 'NOT_STARTED'}">Not Started</option>
+                            <option value="IN_PROGRESS" th:selected="${selectedStatus?.name() == 'IN_PROGRESS'}">In Progress</option>
                             <option value="DONE" th:selected="${selectedStatus?.name() == 'DONE'}">Done</option>
                         </select>
                     </div>
@@ -433,7 +342,7 @@
                     <!-- Button -->
                     <div class="col-md-1 d-grid">
                         <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="bi bi-search"></i> Apply Filters
+                            <i class="bi bi-search"></i> Apply
                         </button>
                     </div>
 
@@ -446,7 +355,7 @@
                             <i class="bi bi-tags"></i> Quick Tags:
                         </small>
 
-                        <!-- Show clear button if tags are selected -->
+                        <!-- Clear button if tags selected -->
                         <a th:if="${selectedTags != null && !selectedTags.isEmpty()}"
                            th:href="@{/projects(
                                search=${searchTerm},
@@ -460,7 +369,7 @@
                             <i class="bi bi-x-circle me-1"></i>Clear Tags
                         </a>
 
-                        <!-- Tag buttons with JavaScript toggle -->
+                        <!-- Tag buttons -->
                         <a th:each="tag : ${allTags}"
                            href="#"
                            onclick="toggleTag(event, this)"
@@ -560,7 +469,7 @@
                             </small>
                         </div>
 
-                        <!-- TODO Alert -->
+
                         <div class="project-todo" th:if="${project.whatTodo != null && !project.whatTodo.isEmpty()}">
                             <small>
                                 <i class="bi bi-check2-square me-1"></i>
@@ -597,11 +506,11 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                         <tr>
-                            <th>Project</th>
+                            <th>Title</th>
                             <th>Status</th>
                             <th class="text-center">GitHub</th>
                             <th>Created</th>
-                            <th>Worked</th>
+                            <th>Activity</th>
                             <th class="text-center">Actions</th>
                         </tr>
                         </thead>
@@ -685,38 +594,7 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Dark Mode Toggle -->
-<script>
-    const themeToggle = document.getElementById('themeToggle');
-    const html = document.documentElement;
-    const iconDark = document.querySelector('.theme-icon-dark');
-    const iconLight = document.querySelector('.theme-icon-light');
-
-    // Load saved theme or default to light
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    html.setAttribute('data-bs-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-
-    themeToggle.addEventListener('click', () => {
-        const currentTheme = html.getAttribute('data-bs-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        html.setAttribute('data-bs-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
-    });
-
-    function updateThemeIcon(theme) {
-        if (theme === 'dark') {
-            iconDark.classList.add('d-none');
-            iconLight.classList.remove('d-none');
-        } else {
-            iconDark.classList.remove('d-none');
-            iconLight.classList.add('d-none');
-        }
-    }
-</script>
+<th:block th:replace="~{fragments :: scripts-common}"></th:block>
 
 <!-- Toggle GRID/TABLE Views -->
 <script>

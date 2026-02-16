@@ -79,31 +79,163 @@ public class ExportServiceImpl implements ExportService {
             writer.println("    <title>Project Tracker Export Report</title>");
             writer.println("    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>");
             writer.println("    <style>");
-            writer.println("        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }");
-            writer.println("        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; }");
-            writer.println("        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }");
-            writer.println("        .stat-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }");
-            writer.println("        .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }");
-            writer.println("        table { width: 100%; border-collapse: collapse; margin-top: 20px; }");
-            writer.println("        th { background-color: #667eea; color: white; padding: 12px; text-align: left; }");
-            writer.println("        td { padding: 10px; border-bottom: 1px solid #ddd; }");
-            writer.println("        tr:hover { background-color: #f5f5f5; }");
-            writer.println("        .tag-badge { background-color: #e7f3ff; color: #0066cc; padding: 4px 10px; border-radius: 15px; font-size: 0.85rem; margin-right: 5px; }");
-            writer.println("        .status-done { background-color: #d4edda; color: #155724; padding: 4px 10px; border-radius: 15px; }");
-            writer.println("        .status-in-progress { background-color: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 15px; }");
-            writer.println("        .status-not-started { background-color: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 15px; }");
-            writer.println("        .footer { margin-top: 30px; text-align: center; color: #6c757d; }");
+            writer.println("        :root {");
+            writer.println("            --bg: #0f172a;");
+            writer.println("            --card: #111827;");
+            writer.println("            --muted: #94a3b8;");
+            writer.println("            --border: rgba(255,255,255,0.06);");
+            writer.println("            --primary: #3b82f6;");
+            writer.println("            --success: #22c55e;");
+            writer.println("            --warning: #f59e0b;");
+            writer.println("            --danger: #ef4444;");
+            writer.println("        }");
+
+            writer.println("        * { box-sizing: border-box; }");
+
+            writer.println("        body {");
+            writer.println("            margin: 0;");
+            writer.println("            padding: 50px;");
+            writer.println("            background: var(--bg);");
+            writer.println("            color: #e5e7eb;");
+            writer.println("            font-family: 'Inter', 'Segoe UI', sans-serif;");
+            writer.println("            -webkit-font-smoothing: antialiased;");
+            writer.println("        }");
+
+            writer.println("        .container { max-width: 1300px; margin: auto; }");
+
+            writer.println("        .header {");
+            writer.println("            display: flex;");
+            writer.println("            justify-content: space-between;");
+            writer.println("            align-items: center;");
+            writer.println("            margin-bottom: 50px;");
+            writer.println("        }");
+
+            writer.println("        .header h1 {");
+            writer.println("            font-size: 1.8rem;");
+            writer.println("            font-weight: 600;");
+            writer.println("            margin: 0;");
+            writer.println("        }");
+
+            writer.println("        .meta { color: var(--muted); font-size: 0.9rem; }");
+
+            writer.println("        .stats {");
+            writer.println("            display: grid;");
+            writer.println("            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));");
+            writer.println("            gap: 25px;");
+            writer.println("            margin-bottom: 50px;");
+            writer.println("        }");
+
+            writer.println("        .stat-card {");
+            writer.println("            background: var(--card);");
+            writer.println("            padding: 28px;");
+            writer.println("            border-radius: 18px;");
+            writer.println("            border: 1px solid var(--border);");
+            writer.println("            transition: 0.2s ease;");
+            writer.println("        }");
+
+            writer.println("        .stat-card:hover { transform: translateY(-3px); }");
+
+            writer.println("        .stat-number {");
+            writer.println("            font-size: 2.2rem;");
+            writer.println("            font-weight: 700;");
+            writer.println("            margin-bottom: 8px;");
+            writer.println("            color: var(--primary);");
+            writer.println("        }");
+
+            writer.println("        .stat-label {");
+            writer.println("            color: var(--muted);");
+            writer.println("            font-size: 0.9rem;");
+            writer.println("        }");
+
+            writer.println("        table {");
+            writer.println("            width: 100%;");
+            writer.println("            border-collapse: separate;");
+            writer.println("            border-spacing: 0;");
+            writer.println("            background: var(--card);");
+            writer.println("            border-radius: 18px;");
+            writer.println("            overflow: hidden;");
+            writer.println("            border: 1px solid var(--border);");
+            writer.println("        }");
+
+            writer.println("        thead { background: #0b1220; }");
+
+            writer.println("        th {");
+            writer.println("            text-align: left;");
+            writer.println("            padding: 16px;");
+            writer.println("            font-size: 0.75rem;");
+            writer.println("            text-transform: uppercase;");
+            writer.println("            letter-spacing: 0.08em;");
+            writer.println("            color: var(--muted);");
+            writer.println("            font-weight: 600;");
+            writer.println("        }");
+
+            writer.println("        td {");
+            writer.println("            padding: 16px;");
+            writer.println("            border-top: 1px solid var(--border);");
+            writer.println("            font-size: 0.9rem;");
+            writer.println("        }");
+
+            writer.println("        tr:hover { background: rgba(255,255,255,0.03); }");
+
+
+            writer.println("        .status-done,");
+            writer.println("        .status-in-progress,");
+            writer.println("        .status-not-started {");
+            writer.println("            display: inline-block;");
+            writer.println("            padding: 1px 6px;");
+            writer.println("            border-radius: 999px;");
+            writer.println("            font-size: 0.65rem;");
+            writer.println("            font-weight: 500;");
+            writer.println("            line-height: 1.2;");
+            writer.println("            white-space: nowrap;");
+            writer.println("            text-transform: uppercase;");
+            writer.println("        }");
+
+            writer.println("        .status-done {");
+            writer.println("            background: rgba(34,197,94,0.15);");
+            writer.println("            color: var(--success);");
+            writer.println("        }");
+
+            writer.println("        .status-in-progress {");
+            writer.println("            background: rgba(245,158,11,0.15);");
+            writer.println("            color: var(--warning);");
+            writer.println("        }");
+
+            writer.println("        .status-not-started {");
+            writer.println("            background: rgba(239,68,68,0.15);");
+            writer.println("            color: var(--danger);");
+            writer.println("        }");
+
+            writer.println("        .footer {");
+            writer.println("            margin-top: 60px;");
+            writer.println("            text-align: center;");
+            writer.println("            color: var(--muted);");
+            writer.println("            font-size: 0.85rem;");
+            writer.println("        }");
+
+            writer.println("        @media print {");
+            writer.println("            body { background: white; color: black; padding: 20px; }");
+            writer.println("            .stat-card, table { border: 1px solid #ddd; }");
+            writer.println("            thead { background: #f3f4f6; }");
+            writer.println("        }");
+
             writer.println("    </style>");
+
             writer.println("</head>");
             writer.println("<body>");
 
+            writer.println("<div class='container'>");
             // Header
             writer.println("    <div class='header'>");
-            writer.println("        <h1>📊 Project Tracker - Export Report</h1>");
-            if (filterDescription != null && !filterDescription.isEmpty()) {
-                writer.println("        <p>" + filterDescription + "</p>");
-            }
-            writer.println("        <p>Generated: " + java.time.LocalDateTime.now().format(DATE_FORMATTER) + "</p>");
+            writer.println("        <div>");
+            writer.println("            <h1>Project Tracker Report</h1>");
+            writer.println("            <div class='meta'>" +
+                    (filterDescription != null ? filterDescription : "Full project export") +
+                    "</div>");
+            writer.println("        </div>");
+            writer.println("        <div class='meta'>Generated: " +
+                    java.time.LocalDateTime.now().format(DATE_FORMATTER) +
+                    "</div>");
             writer.println("    </div>");
 
             // Statistics
@@ -156,9 +288,16 @@ public class ExportServiceImpl implements ExportService {
 
                 // Tags
                 writer.print("                <td>");
+
+                int tagIndex = 0;
                 for (Tag tag : project.getTags()) {
-                    writer.print("<span class='tag-badge'>" + escapeHtml(tag.getName()) + "</span>");
+                    if (tagIndex > 0) {
+                        writer.print(", ");
+                    }
+                    writer.print(escapeHtml(tag.getName()));
+                    tagIndex++;
                 }
+
                 writer.println("</td>");
 
                 // GitHub
@@ -176,6 +315,7 @@ public class ExportServiceImpl implements ExportService {
             writer.println("        <p>Project Tracker - Generated on " + java.time.LocalDate.now() + "</p>");
             writer.println("    </div>");
 
+            writer.println("</div>");
             writer.println("</body>");
             writer.println("</html>");
 

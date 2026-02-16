@@ -3,198 +3,59 @@
 <head>
     <th:block th:replace="~{fragments :: head-common}"></th:block>
     <title>404 - Page Not Found</title>
-    <link rel="stylesheet" href="/css/dashboard-styles.css"/>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .error-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-
-        .error-card {
-            max-width: 600px;
-            text-align: center;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 3rem 2rem;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .error-code {
-            font-size: 8rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #2d51f1 0%, #082f82 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1;
-            margin-bottom: 1rem;
-        }
-
-        .error-title {
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-        }
-
-        .error-message {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-        }
-
-        .error-details {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            margin-bottom: 2rem;
-            text-align: left;
-        }
-
-        .error-details dt {
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .error-details dd {
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-            word-break: break-all;
-        }
-
-        .error-icon {
-            font-size: 5rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-        }
-
-        @media (max-width: 767px) {
-            .error-code {
-                font-size: 5rem;
-            }
-
-            .error-title {
-                font-size: 1.5rem;
-            }
-
-            .error-card {
-                padding: 2rem 1rem;
-            }
-        }
-    </style>
 </head>
 <body>
 
-<div class="app-wrapper">
+<div class="app-layout">
+    <!-- Navbar -->
+    <nav th:replace="~{fragments :: navbar('')}"></nav>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg app-navbar">
-        <div class="container-fluid px-4">
-
-            <!-- Brand -->
-            <a class="navbar-brand fw-bold d-flex align-items-center" th:href="@{/}">
-                <i class="bi bi-kanban-fill me-2 brand-icon"></i>
-                <span class="brand-text">Project Tracker</span>
-            </a>
-
-            <!-- Mobile Toggle -->
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#mainNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="mainNavbar">
-
-                <!-- Left Navigation -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/projects}">
-                            <i class="bi bi-folder2-open me-1"></i>
-                            <span class="nav-text">Projects</span>
+    <!-- Main Content -->
+    <div class="app-content">
+        <div class="page-container">
+            <div class="content-card text-center fade-in">
+                <div class="py-5">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 5rem; color: var(--warning);"></i>
+                    
+                    <h1 class="display-4 mt-4 mb-3">404 - Page Not Found</h1>
+                    
+                    <p class="lead text-muted">
+                        Oops! The page you're looking for doesn't exist.
+                    </p>
+                    
+                    <p class="text-muted" th:if="${path}">
+                        <code th:text="${path}"></code>
+                    </p>
+                    
+                    <hr class="my-4">
+                    
+                    <p class="mb-4">Here are some helpful links instead:</p>
+                    
+                    <div class="d-flex gap-2 justify-content-center flex-wrap">
+                        <a th:href="@{/projects}" class="btn btn-primary">
+                            <i class="bi bi-folder2-open me-1"></i> Projects
                         </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/tags}">
-                            <i class="bi bi-tags me-1"></i>
-                            <span class="nav-text">Tags</span>
+                        <a th:href="@{/tags}" class="btn btn-success">
+                            <i class="bi bi-tags me-1"></i> Tags
                         </a>
-                    </li>
-                </ul>
-
-
-
-                <!-- Right Side Buttons -->
-                <div class="d-flex align-items-center gap-2">
-
-                    <!-- Theme Toggle -->
-                    <button class="btn btn-theme" id="themeToggle" title="Toggle Dark Mode">
-                        <i class="bi bi-moon-stars-fill theme-icon-dark"></i>
-                        <i class="bi bi-sun-fill theme-icon-light d-none"></i>
-                    </button>
-
+                        <a th:href="@{/statistics}" class="btn btn-info">
+                            <i class="bi bi-graph-up-arrow me-1"></i> Statistics
+                        </a>
+                        <a th:href="@{/help}" class="btn btn-outline-secondary">
+                            <i class="bi bi-question-circle me-1"></i> Help
+                        </a>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="error-container">
-        <div class="error-card fade-in">
-            <i class="bi bi-exclamation-triangle error-icon"></i>
-            <div class="error-code">404</div>
-            <h1 class="error-title">Page Not Found</h1>
-            <p class="error-message">
-                Oops! The page you're looking for doesn't exist or has been moved.
-            </p>
-
-            <div class="error-details">
-                <dl class="mb-0">
-                    <dt>What happened?</dt>
-                    <dd th:text="${errorMessage != null ? errorMessage : 'The requested resource could not be found.'}">
-                        The requested resource could not be found.
-                    </dd>
-
-                    <dt>Requested Path:</dt>
-                    <dd><code th:text="${path}">Unknown</code></dd>
-
-                    <dt>Time:</dt>
-                    <dd th:text="${#temporals.format(timestamp, 'MMM dd, yyyy HH:mm:ss')}">Unknown</dd>
-                </dl>
-            </div>
-
-            <div class="d-flex gap-2 justify-content-center flex-wrap">
-                <a th:href="@{/}" class="btn btn-primary">
-                    <i class="bi bi-house-door me-1"></i> Go Home
-                </a>
-                <a th:href="@{/projects}" class="btn btn-outline-secondary">
-                    <i class="bi bi-folder2-open me-1"></i> View Projects
-                </a>
-                <button onclick="history.back()" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Go Back
-                </button>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer th:replace="~{fragments :: footer}"></footer>
-
 </div>
 
 <!-- Scripts -->
 <th:block th:replace="~{fragments :: scripts-common}"></th:block>
+
 </body>
 </html>

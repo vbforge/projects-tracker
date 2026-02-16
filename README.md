@@ -1,4 +1,4 @@
-# Project Tracker
+# Projects Tracker
 
 **A full-stack web application for managing software development projects with advanced filtering, tag management, and export capabilities.**
 
@@ -9,6 +9,14 @@
 - 📥 Export to CSV and HTML
 - 📱 Responsive design
 - 🌓 Dark/Light modes
+
+---
+
+![DASHBOARD](src/main/resources/static/images/dashboard-screen.png)
+
+---
+
+![HTML REPORT EXAMPLE](src/main/resources/static/images/html-report-example.png)
 
 ---
 
@@ -38,7 +46,7 @@
 
 ## 🎯 Project Introduction
 
-**Project Name:** Project Tracker  
+**Project Name:** Projects Tracker  
 **Type:** Web Application  
 **Purpose:** A centralized system to manage, track, and organize all your software projects
 
@@ -510,12 +518,12 @@ Build this project in **6 manageable phases**, step-by-step.
 ## 📁 Project Structure
 
 ```
-project-tracker/
+projects-tracker/
 ├── src/
 │   ├── main/
 │   │   ├── java/
-│   │   │   └── com/vbforge/projecttracker/
-│   │   │       ├── ProjectTrackerApplication.java
+│   │   │   └── com/vbforge/projectstracker/
+│   │   │       ├── ProjectsTrackerApplication.java
 │   │   │       ├── controller/
 │   │   │       │   ├── ProjectController.java
 │   │   │       │   ├── TagController.java
