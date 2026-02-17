@@ -1,7 +1,9 @@
 ## 🚀 Next Steps (Optional Enhancements):
 
-### 1. **Pagination** 📄
-Add pagination for projects (show 12 per page)
+### 1. **User Authentication** 🔐
+- Spring Security
+- User login/registration
+- Personal project lists
 
 ### 2. **Excel Export** 📊
 Add Excel export using Apache POI
@@ -14,17 +16,7 @@ Add JSON export
 - Display stars, forks, last commit
 - Auto-update project status based on commits
 
-### 5. **Advanced Analytics** 📈
-- Time tracking per project
-- Productivity charts (projects per month)
-- Tag usage statistics
-
-### 6. **User Authentication** 🔐
-- Spring Security
-- User login/registration
-- Personal project lists
-
-### 7. **REST API** 🌐
+### 5. **REST API** 🌐
 - Create REST endpoints
 - Swagger/OpenAPI documentation
 - JSON responses

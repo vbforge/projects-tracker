@@ -3,7 +3,7 @@
 
 <head>
     <th:block th:replace="~{fragments :: head-common}"></th:block>
-    <title>Dashboard</title>
+    <title>Project Tracker - Dashboard</title>
 </head>
 
 <body>
@@ -148,11 +148,15 @@
                 <h5 class="mb-0 toolbar-title">
                     <i class="bi bi-grid-3x3-gap me-2"></i>
                     Projects
-                    <span class="badge bg-secondary ms-2" th:text="${projects != null ? projects.size() : 0}">0</span>
+                    <span class="badge bg-secondary ms-2" th:text="${totalElements}">0</span>
                     <span th:if="${hasActiveFilters}" class="badge bg-primary ms-1">
                         <i class="bi bi-funnel-fill"></i> Filtered
                     </span>
                 </h5>
+                <small class="text-muted mt-1 d-block"
+                       th:if="${totalElements > 0}"
+                       th:text="'Showing ' + ${displayFrom} + ' – ' + ${displayTo} + ' of ' + ${totalElements} + ' projects'">
+                </small>
             </div>
             <div class="toolbar-right">
                 <!-- View Toggle -->
@@ -427,6 +431,32 @@
             </form>
         </div>
 
+        <!-- Page Size Selector -->
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small">Show:</span>
+            <div class="btn-group btn-group-sm">
+                <a th:each="s : ${pageSizes}"
+                   th:href="@{/projects(
+                           search=${searchTerm},
+                           status=${selectedStatus},
+                           onGithub=${selectedOnGithub},
+                           tags=${selectedTags},
+                           createdMonth=${createdMonth},
+                           lastWorkedMonth=${lastWorkedMonth},
+                           sortBy=${sortBy},
+                           page=0,
+                           size=${s}
+                       )}"
+                   class="btn btn-outline-secondary"
+                   th:classappend="${pageSize == s} ? ' active' : ''"
+                   th:text="${s}">
+                </a>
+            </div>
+            <span class="text-muted small">per page</span>
+        </div>
+
+        <br>
+
         <!-- CARD VIEW -->
         <div id="cardView">
             <div class="row g-3 g-md-4">
@@ -469,7 +499,7 @@
                             </small>
                         </div>
 
-
+                        <!-- TODO Alert -->
                         <div class="project-todo" th:if="${project.whatTodo != null && !project.whatTodo.isEmpty()}">
                             <small>
                                 <i class="bi bi-check2-square me-1"></i>
@@ -506,11 +536,11 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead>
                         <tr>
-                            <th>Title</th>
+                            <th>Project</th>
                             <th>Status</th>
                             <th class="text-center">GitHub</th>
                             <th>Created</th>
-                            <th>Activity</th>
+                            <th>Worked</th>
                             <th class="text-center">Actions</th>
                         </tr>
                         </thead>
@@ -575,6 +605,137 @@
                 </div>
             </div>
         </div>
+
+        <!-- ===================== PAGINATION ===================== -->
+        <div th:if="${totalElements > 0}" class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
+
+            <!-- Page Size Selector -->
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Show:</span>
+                <div class="btn-group btn-group-sm">
+                    <a th:each="s : ${pageSizes}"
+                       th:href="@{/projects(
+                           search=${searchTerm},
+                           status=${selectedStatus},
+                           onGithub=${selectedOnGithub},
+                           tags=${selectedTags},
+                           createdMonth=${createdMonth},
+                           lastWorkedMonth=${lastWorkedMonth},
+                           sortBy=${sortBy},
+                           page=0,
+                           size=${s}
+                       )}"
+                       class="btn btn-outline-secondary"
+                       th:classappend="${pageSize == s} ? ' active' : ''"
+                       th:text="${s}">
+                    </a>
+                </div>
+                <span class="text-muted small">per page</span>
+            </div>
+
+            <!-- Page Navigation -->
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+
+                    <!-- Previous -->
+                    <li class="page-item" th:classappend="${!hasPrevious} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/projects(
+                               search=${searchTerm},
+                               status=${selectedStatus},
+                               onGithub=${selectedOnGithub},
+                               tags=${selectedTags},
+                               createdMonth=${createdMonth},
+                               lastWorkedMonth=${lastWorkedMonth},
+                               sortBy=${sortBy},
+                               page=${currentPage - 1},
+                               size=${pageSize}
+                           )}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+
+                    <!-- Page Numbers (show up to 5 around current page) -->
+                    <th:block th:with="
+                        startPage=${T(java.lang.Math).max(0, currentPage - 2)},
+                        endPage=${T(java.lang.Math).min(totalPages - 1, currentPage + 2)}
+                    ">
+                        <!-- First page + ellipsis if needed -->
+                        <li class="page-item d-none d-sm-block" th:if="${startPage > 0}">
+                            <a class="page-link"
+                               th:href="@{/projects(search=${searchTerm},status=${selectedStatus},onGithub=${selectedOnGithub},tags=${selectedTags},createdMonth=${createdMonth},lastWorkedMonth=${lastWorkedMonth},sortBy=${sortBy},page=0,size=${pageSize})}">1</a>
+                        </li>
+                        <li class="page-item disabled d-none d-sm-block" th:if="${startPage > 1}">
+                            <span class="page-link">…</span>
+                        </li>
+
+                        <!-- Page numbers -->
+                        <li class="page-item d-none d-sm-block"
+                            th:each="i : ${#numbers.sequence(startPage, endPage)}"
+                            th:classappend="${i == currentPage} ? 'active'">
+                            <a class="page-link"
+                               th:href="@{/projects(
+                                   search=${searchTerm},
+                                   status=${selectedStatus},
+                                   onGithub=${selectedOnGithub},
+                                   tags=${selectedTags},
+                                   createdMonth=${createdMonth},
+                                   lastWorkedMonth=${lastWorkedMonth},
+                                   sortBy=${sortBy},
+                                   page=${i},
+                                   size=${pageSize}
+                               )}"
+                               th:text="${i + 1}">
+                            </a>
+                        </li>
+
+                        <!-- Ellipsis + last page if needed -->
+                        <li class="page-item disabled d-none d-sm-block" th:if="${endPage < totalPages - 2}">
+                            <span class="page-link">…</span>
+                        </li>
+                        <li class="page-item d-none d-sm-block" th:if="${endPage < totalPages - 1}">
+                            <a class="page-link"
+                               th:href="@{/projects(search=${searchTerm},status=${selectedStatus},onGithub=${selectedOnGithub},tags=${selectedTags},createdMonth=${createdMonth},lastWorkedMonth=${lastWorkedMonth},sortBy=${sortBy},page=${totalPages - 1},size=${pageSize})}"
+                               th:text="${totalPages}">
+                            </a>
+                        </li>
+                    </th:block>
+
+                    <!-- Mobile: page X of Y -->
+                    <li class="page-item disabled d-sm-none">
+                        <span class="page-link"
+                              th:text="${currentPage + 1} + ' / ' + ${totalPages}">
+                        </span>
+                    </li>
+
+                    <!-- Next -->
+                    <li class="page-item" th:classappend="${!hasNext} ? 'disabled'">
+                        <a class="page-link"
+                           th:href="@{/projects(
+                               search=${searchTerm},
+                               status=${selectedStatus},
+                               onGithub=${selectedOnGithub},
+                               tags=${selectedTags},
+                               createdMonth=${createdMonth},
+                               lastWorkedMonth=${lastWorkedMonth},
+                               sortBy=${sortBy},
+                               page=${currentPage + 1},
+                               size=${pageSize}
+                           )}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+
+            <!-- Summary text -->
+            <div class="text-muted small d-none d-md-block"
+                 th:text="'Page ' + ${currentPage + 1} + ' of ' + ${totalPages}">
+            </div>
+
+        </div>
+        <!-- =================== END PAGINATION =================== -->
 
         <!-- Empty State -->
         <div class="empty-state" th:if="${projects == null || projects.isEmpty()}">

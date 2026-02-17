@@ -1,45 +1,36 @@
 package com.vbforge.projectstracker.controller;
 
-import com.vbforge.projectstracker.dto.ProjectDTO;
-import com.vbforge.projectstracker.dto.TagDTO;
 import com.vbforge.projectstracker.mapper.ProjectMapper;
-import com.vbforge.projectstracker.mapper.TagMapper;
 import com.vbforge.projectstracker.exception.ResourceNotFoundException;
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
-import com.vbforge.projectstracker.service.ProjectFilterService;
 import com.vbforge.projectstracker.service.ProjectService;
 import com.vbforge.projectstracker.service.TagService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Controller for Project CRUD operations and dashboard
- */
-@Slf4j
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class ProjectController {
 
     private final ProjectService projectService;
     private final TagService tagService;
-    private final ProjectFilterService filterService;
     private final ProjectMapper projectMapper;
-    private final TagMapper tagMapper;
 
-    /**
-     * Dashboard - Main page with project listing, filters, and statistics
-     */
+    // Valid page sizes
+    private static final List<Integer> PAGE_SIZES = List.of(10, 25, 50, 100);
+    private static final int DEFAULT_PAGE_SIZE = 10;
+
     @GetMapping({"/", "/projects"})
     public String dashboard(
             @RequestParam(required = false) String search,
@@ -49,265 +40,210 @@ public class ProjectController {
             @RequestParam(required = false) String createdMonth,
             @RequestParam(required = false) String lastWorkedMonth,
             @RequestParam(required = false, defaultValue = "lastWorked") String sortBy,
-            Model model) {
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            Model model
+    ) {
+        // Sanitize inputs
+        if (!PAGE_SIZES.contains(size)) size = DEFAULT_PAGE_SIZE;
+        if (page < 0) page = 0;
+        if (tags != null && !tags.isEmpty()) {
+            tags = tags.stream().distinct().collect(Collectors.toList());
+        }
 
-        log.debug("Dashboard accessed with filters - search: {}, status: {}, tags: {}", search, status, tags);
+        // STEP 1: Get ALL filtered + sorted projects (same logic as before)
+        List<Project> allFiltered = getFilteredProjects(search, status, onGithub, tags, createdMonth, lastWorkedMonth);
+        allFiltered = applySorting(allFiltered, sortBy);
 
-        // Get filtered and sorted projects using FilterService
-        List<Project> projects = filterService.getFilteredAndSortedProjects(
-                search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy
-        );
+        // STEP 2: Pagination math
+        int totalElements = allFiltered.size();
+        int totalPages = totalElements == 0 ? 1 : (int) Math.ceil((double) totalElements / size);
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
 
-        // Convert to DTOs
-        List<ProjectDTO> projectDTOs = projects.stream()
-                .map(projectMapper::toDTO)
-                .collect(Collectors.toList());
+        int fromIndex = page * size;
+        int toIndex   = Math.min(fromIndex + size, totalElements);
 
-        // Calculate statistics
-        long totalProjects = projectService.getTotalProjectCount();
+        // STEP 3: Slice the current page
+        List<Project> pagedProjects = allFiltered.subList(fromIndex, toIndex);
+
+        int displayFrom = totalElements == 0 ? 0 : fromIndex + 1;
+        int displayTo   = toIndex;
+
+        // Statistics cards (always totals, not filtered)
+        long totalProjects     = projectService.getTotalProjectCount();
         long completedProjects = projectService.getCompletedProjectCount();
         long inProgressProjects = projectService.getInProgressProjectCount();
         long notStartedProjects = projectService.getNotStartedProjectCount();
-        long githubProjects = projectService.getGithubProjectCount();
+        long githubProjects    = projectService.getGithubProjectCount();
+        int completionRate  = totalProjects == 0 ? 0 : (int) ((completedProjects  * 100.0) / totalProjects);
+        int githubRate      = totalProjects == 0 ? 0 : (int) ((githubProjects     * 100.0) / totalProjects);
+        int inProgressRate  = totalProjects == 0 ? 0 : (int) ((inProgressProjects * 100.0) / totalProjects);
+        int notStartedRate  = totalProjects == 0 ? 0 : (int) ((notStartedProjects * 100.0) / totalProjects);
 
-        // Calculate rates
-        int completionRate = totalProjects == 0 ? 0 : (int) ((completedProjects * 100.0) / totalProjects);
-        int githubRate = totalProjects == 0 ? 0 : (int) ((githubProjects * 100.0) / totalProjects);
-        int inProgressRate = totalProjects == 0 ? 0 : (int) ((inProgressProjects * 100.0) / totalProjects);
-        int notStartedRate = totalProjects == 0 ? 0 : (int) ((notStartedProjects * 100.0) / totalProjects);
+        var allTags = tagService.getAllTagsOrderedByPopularity();
 
-        // Get all tags for filter section
-        List<TagDTO> allTags = tagService.getAllTagsOrderedByPopularity().stream()
-                .map(tagMapper::toDTO)
-                .collect(Collectors.toList());
-
-        // Check if filters are active
-        boolean hasActiveFilters = filterService.hasActiveFilters(
-                search, status, onGithub, tags, createdMonth, lastWorkedMonth
-        );
-
-        // Add data to model
-        model.addAttribute("projects", projectDTOs);
-        model.addAttribute("totalProjects", totalProjects);
-        model.addAttribute("completedProjects", completedProjects);
+        // Model attributes
+        model.addAttribute("projects",           pagedProjects);
+        model.addAttribute("totalProjects",      totalProjects);
+        model.addAttribute("completedProjects",  completedProjects);
         model.addAttribute("inProgressProjects", inProgressProjects);
         model.addAttribute("notStartedProjects", notStartedProjects);
-        model.addAttribute("githubProjects", githubProjects);
-        model.addAttribute("allTags", allTags);
-        model.addAttribute("completionRate", completionRate);
-        model.addAttribute("inProgressRate", inProgressRate);
-        model.addAttribute("notStartedRate", notStartedRate);
-        model.addAttribute("githubRate", githubRate);
+        model.addAttribute("githubProjects",     githubProjects);
+        model.addAttribute("allTags",            allTags);
+        model.addAttribute("completionRate",     completionRate);
+        model.addAttribute("inProgressRate",     inProgressRate);
+        model.addAttribute("notStartedRate",     notStartedRate);
+        model.addAttribute("githubRate",         githubRate);
 
-        // Add filter values back to model
-        model.addAttribute("searchTerm", search);
-        model.addAttribute("selectedStatus", status);
+        // Filter state (for keeping filter values on form + active filter badges)
+        model.addAttribute("searchTerm",       search);
+        model.addAttribute("selectedStatus",   status);
         model.addAttribute("selectedOnGithub", onGithub);
-        model.addAttribute("selectedTags", tags != null ? tags : new ArrayList<>());
-        model.addAttribute("createdMonth", createdMonth);
-        model.addAttribute("lastWorkedMonth", lastWorkedMonth);
-        model.addAttribute("sortBy", sortBy);
-        model.addAttribute("hasActiveFilters", hasActiveFilters);
+        model.addAttribute("selectedTags",     tags != null ? tags : new ArrayList<>());
+        model.addAttribute("selectedTag",      tags != null && !tags.isEmpty() ? tags.get(0) : null);
+        model.addAttribute("createdMonth",     createdMonth);
+        model.addAttribute("lastWorkedMonth",  lastWorkedMonth);
+        model.addAttribute("sortBy",           sortBy);
+        model.addAttribute("hasActiveFilters", hasFilters(search, status, onGithub, tags, createdMonth, lastWorkedMonth));
+
+        // Pagination state
+        model.addAttribute("currentPage",   page);
+        model.addAttribute("totalPages",    totalPages);
+        model.addAttribute("pageSize",      size);
+        model.addAttribute("totalElements", totalElements);
+        model.addAttribute("displayFrom",   displayFrom);
+        model.addAttribute("displayTo",     displayTo);
+        model.addAttribute("pageSizes",     PAGE_SIZES);
+        model.addAttribute("hasPrevious",   page > 0);
+        model.addAttribute("hasNext",       page < totalPages - 1);
+
+        log.debug("Dashboard: page={}/{}, size={}, showing {}-{} of {}",
+                page + 1, totalPages, size, displayFrom, displayTo, totalElements);
 
         return "dashboard";
     }
 
-    /**
-     * Show form for creating new project
-     */
     @GetMapping("/projects/new")
     public String showNewProjectForm(Model model) {
-        log.debug("Showing new project form");
-
-        ProjectDTO projectDTO = new ProjectDTO();
-        projectDTO.setStatus(ProjectStatus.NOT_STARTED);
-        projectDTO.setOnGithub(false);
-
-        List<TagDTO> allTags = tagService.getAllTagsOrderedByName().stream()
-                .map(tagMapper::toDTO)
-                .collect(Collectors.toList());
-
-        model.addAttribute("project", projectDTO);
-        model.addAttribute("allTags", allTags);
+        model.addAttribute("project", new Project());
+        model.addAttribute("allTags", tagService.getAllTagsOrderedByName());
         model.addAttribute("statuses", ProjectStatus.values());
-
         return "project-form";
     }
 
-    /**
-     * Create new project
-     */
     @PostMapping("/projects/add")
     public String addProject(
-            @Valid @ModelAttribute("project") ProjectDTO projectDTO,
-            BindingResult bindingResult,
+            @ModelAttribute Project project,
             @RequestParam(required = false) List<Long> tagIds,
-            RedirectAttributes redirectAttributes,
-            Model model) {
-
-        log.info("Creating new project: {}", projectDTO.getTitle());
-
-        // Check for validation errors
-        if (bindingResult.hasErrors()) {
-            log.warn("Validation errors creating project: {}", bindingResult.getAllErrors());
-
-            // Re-populate form data
-            List<TagDTO> allTags = tagService.getAllTagsOrderedByName().stream()
-                    .map(tagMapper::toDTO)
-                    .collect(Collectors.toList());
-
-            model.addAttribute("allTags", allTags);
-            model.addAttribute("statuses", ProjectStatus.values());
-            model.addAttribute("error", "Please correct the errors below");
-
-            return "project-form";
-        }
-
+            RedirectAttributes redirectAttributes) {
         try {
-            // Convert DTO to entity
-            Project project = projectMapper.toEntity(projectDTO);
-
-            // Save project
             Project savedProject = projectService.saveProject(project);
-
-            // Update tags if provided
             if (tagIds != null && !tagIds.isEmpty()) {
                 projectService.updateProjectTags(savedProject.getId(), tagIds);
             }
-
-            log.info("Project created successfully with ID: {}", savedProject.getId());
-            redirectAttributes.addFlashAttribute("success", "Project '" + savedProject.getTitle() + "' created successfully!");
+            redirectAttributes.addFlashAttribute("success", "Project created successfully!");
             return "redirect:/projects";
-
         } catch (Exception e) {
-            log.error("Error creating project: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Error creating project: " + e.getMessage());
             return "redirect:/projects/new";
         }
     }
 
-    /**
-     * Show form for editing existing project
-     */
     @GetMapping("/projects/{id}/edit")
-    public String showEditProjectForm(@PathVariable Long id, Model model) {
-        log.debug("Showing edit form for project ID: {}", id);
-
+    public String showEditProjectForm(@PathVariable long id, Model model) {
         Project project = projectService.getProjectById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
-
-        ProjectDTO projectDTO = projectMapper.toDTO(project);
-
-        List<TagDTO> allTags = tagService.getAllTagsOrderedByName().stream()
-                .map(tagMapper::toDTO)
-                .collect(Collectors.toList());
-
-        model.addAttribute("project", projectDTO);
-        model.addAttribute("allTags", allTags);
+        model.addAttribute("project", project);
+        model.addAttribute("allTags", tagService.getAllTagsOrderedByName());
         model.addAttribute("statuses", ProjectStatus.values());
-
         return "project-form";
     }
 
-    /**
-     * Update existing project
-     */
     @PostMapping("/projects/{id}/update")
     public String updateProject(
             @PathVariable Long id,
-            @Valid @ModelAttribute("project") ProjectDTO projectDTO,
-            BindingResult bindingResult,
+            @ModelAttribute Project project,
             @RequestParam(required = false) List<Long> tagIds,
-            RedirectAttributes redirectAttributes,
-            Model model) {
-
-        log.info("Updating project ID: {}", id);
-
-        // Check for validation errors
-        if (bindingResult.hasErrors()) {
-            log.warn("Validation errors updating project: {}", bindingResult.getAllErrors());
-
-            // Re-populate form data
-            projectDTO.setId(id); // Ensure ID is set
-            List<TagDTO> allTags = tagService.getAllTagsOrderedByName().stream()
-                    .map(tagMapper::toDTO)
-                    .collect(Collectors.toList());
-
-            model.addAttribute("allTags", allTags);
-            model.addAttribute("statuses", ProjectStatus.values());
-            model.addAttribute("error", "Please correct the errors below");
-
-            return "project-form";
-        }
-
+            RedirectAttributes redirectAttributes) {
         try {
-            // Convert DTO to entity and update
-            Project updatedProject = projectMapper.toEntity(projectDTO);
-            projectService.updateProject(id, updatedProject);
-
-            // Update tags
-            if (tagIds != null) {
-                projectService.updateProjectTags(id, tagIds);
-            } else {
-                // Clear all tags if none selected
-                projectService.updateProjectTags(id, List.of());
-            }
-
-            log.info("Project updated successfully: {}", id);
+            projectService.updateProject(id, project);
+            projectService.updateProjectTags(id, tagIds != null ? tagIds : List.of());
             redirectAttributes.addFlashAttribute("success", "Project updated successfully!");
             return "redirect:/projects";
-
-        } catch (ResourceNotFoundException e) {
-            log.error("Project not found: {}", id);
-            redirectAttributes.addFlashAttribute("error", "Project not found");
-            return "redirect:/projects";
         } catch (Exception e) {
-            log.error("Error updating project: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Error updating project: " + e.getMessage());
-            return "redirect:/projects/" + id + "/edit";
+            return "redirect:/projects/{id}/edit";
         }
     }
 
-    /**
-     * Delete project
-     */
     @PostMapping("/projects/{id}/delete")
     public String deleteProject(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        log.info("Deleting project ID: {}", id);
-
         try {
-            Project project = projectService.getProjectById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
-
-            String projectTitle = project.getTitle();
             projectService.deleteProject(id);
-
-            log.info("Project deleted successfully: {}", id);
-            redirectAttributes.addFlashAttribute("success", "Project '" + projectTitle + "' deleted successfully!");
-        } catch (ResourceNotFoundException e) {
-            log.error("Project not found: {}", id);
-            redirectAttributes.addFlashAttribute("error", "Project not found");
+            redirectAttributes.addFlashAttribute("success", "Project deleted successfully!");
         } catch (Exception e) {
-            log.error("Error deleting project: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Error deleting project: " + e.getMessage());
         }
-
         return "redirect:/projects";
     }
 
-    /**
-     * View project details
-     */
     @GetMapping("/projects/{id}")
     public String viewProject(@PathVariable Long id, Model model) {
-        log.debug("Viewing project ID: {}", id);
-
         Project project = projectService.getProjectById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
-
-        ProjectDTO projectDTO = projectMapper.toDTO(project);
-
-        model.addAttribute("project", projectDTO);
+        model.addAttribute("project", project);
         return "project-detail";
+    }
+
+    // ─── Private Helpers ────────────────────────────────────────────────────────
+
+    private List<Project> getFilteredProjects(String search, ProjectStatus status, Boolean onGithub,
+                                              List<String> tags, String createdMonth, String lastWorkedMonth) {
+        if (createdMonth != null && !createdMonth.isEmpty()) {
+            return projectService.getProjectsCreatedInMonth(YearMonth.parse(createdMonth));
+        }
+        if (lastWorkedMonth != null && !lastWorkedMonth.isEmpty()) {
+            return projectService.getProjectsLastWorkedInMonth(YearMonth.parse(lastWorkedMonth));
+        }
+        if (tags != null && !tags.isEmpty()) {
+            return projectService.getProjectsByTags(tags).stream()
+                    .filter(p -> search == null || search.isEmpty() ||
+                            p.getTitle().toLowerCase().contains(search.toLowerCase()))
+                    .filter(p -> status == null || p.getStatus() == status)
+                    .filter(p -> onGithub == null || p.getOnGithub().equals(onGithub))
+                    .toList();
+        }
+        if (hasAnyFilter(search, status, onGithub)) {
+            return projectService.searchProjects(search, status, onGithub, null);
+        }
+        return projectService.getAllProjects();
+    }
+
+    private List<Project> applySorting(List<Project> projects, String sortBy) {
+        if (projects == null || projects.isEmpty()) return projects;
+        return switch (sortBy) {
+            case "created" -> projects.stream()
+                    .sorted((a, b) -> b.getCreatedDate().compareTo(a.getCreatedDate()))
+                    .toList();
+            case "title" -> projects.stream()
+                    .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
+                    .toList();
+            default -> projects.stream()
+                    .sorted((a, b) -> b.getLastWorkedOn().compareTo(a.getLastWorkedOn()))
+                    .toList();
+        };
+    }
+
+    private boolean hasAnyFilter(String search, ProjectStatus status, Boolean onGithub) {
+        return (search != null && !search.isEmpty()) || status != null || onGithub != null;
+    }
+
+    private boolean hasFilters(String search, ProjectStatus status, Boolean onGithub,
+                               List<String> tags, String createdMonth, String lastWorkedMonth) {
+        return (search != null && !search.isEmpty()) || status != null || onGithub != null ||
+                (tags != null && !tags.isEmpty()) ||
+                (createdMonth != null && !createdMonth.isEmpty()) ||
+                (lastWorkedMonth != null && !lastWorkedMonth.isEmpty());
     }
 }
