@@ -12,11 +12,15 @@
 
 ---
 
-![DASHBOARD](src/main/resources/static/images/dashboard-screen.png)
+![DASHBOARD](src/main/resources/static/images/dashboard-page.png)
 
 ---
 
-![HTML REPORT EXAMPLE](src/main/resources/static/images/html-report-example.png)
+![STATISTICS](src/main/resources/static/images/statistics-page.png)
+
+---
+
+![HTML REPORT EXAMPLE](src/main/resources/static/images/screen-HTML-report.png)
 
 ---
 

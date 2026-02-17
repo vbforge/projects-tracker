@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" data-bs-theme="light">
+<head>
+    <th:block th:replace="~{fragments :: head-common}"></th:block>
+    <title>Project Statistics</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        .chart-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+            transition: all var(--transition-base);
+        }
+
+        .chart-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-wrapper-tall {
+            height: 400px;
+        }
+
+        .mini-stat-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            text-align: center;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mini-stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .mini-stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .mini-stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--navbar-gradient-start) 0%, var(--navbar-gradient-end) 100%);
+            color: white;
+            padding: 2rem;
+            margin: -2rem -2rem 2rem -2rem;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .dashboard-clock {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(6px);
+            padding: 12px 18px;
+            border-radius: 14px;
+            min-width: 170px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .clock-time {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .clock-date {
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+    <!-- Navbar -->
+    <nav th:replace="~{fragments :: navbar('statistics')}"></nav>
+
+    <!-- Main Content -->
+    <div class="app-content">
+        <div class="content-card fade-in">
+
+            <!-- Page Header -->
+<!--            <div class="page-header">-->
+<!--                <h1 class="mb-2">-->
+<!--                    <i class="bi bi-graph-up-arrow me-2"></i>-->
+<!--                    Project Statistics Dashboard-->
+<!--                </h1>-->
+<!--                <p class="mb-0 opacity-75">Comprehensive overview of your project portfolio</p>-->
+<!--            </div>-->
+
+            <div class="page-header d-flex justify-content-between align-items-start flex-wrap">
+
+                <!-- Left side -->
+                <div>
+                    <h1 class="mb-2">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        Project Statistics Dashboard
+                    </h1>
+                    <p class="mb-0 opacity-75">
+                        Comprehensive overview of your project portfolio
+                    </p>
+                </div>
+
+                <!-- Right side - Clock -->
+                <div class="dashboard-clock text-end">
+                    <div class="clock-time" id="currentTime">00:00:00</div>
+                    <div class="clock-date opacity-75" id="currentDate">Loading...</div>
+                </div>
+
+            </div>
+
+            <!-- Quick Stats Row -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="mini-stat-card">
+                        <div class="mini-stat-number text-primary" th:text="${totalProjects}">0</div>
+                        <div class="mini-stat-label">Total Projects</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="mini-stat-card">
+                        <div class="mini-stat-number text-success" th:text="${completedCount}">0</div>
+                        <div class="mini-stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="mini-stat-card">
+                        <div class="mini-stat-number text-warning" th:text="${inProgressCount}">0</div>
+                        <div class="mini-stat-label">In Progress</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="mini-stat-card">
+                        <div class="mini-stat-number text-info" th:text="${completionRate + '%'}">0%</div>
+                        <div class="mini-stat-label">Completion Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="row g-3 mb-3">
+                <!-- Project Status Distribution -->
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="bi bi-bar-chart-fill text-primary"></i>
+                            Project Status Distribution
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub vs Local -->
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="bi bi-pie-chart-fill text-success"></i>
+                            GitHub vs Local Projects
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="githubChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="row g-3 mb-3">
+                <!-- Projects Over Time -->
+                <div class="col-lg-8">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="bi bi-graph-up text-info"></i>
+                            Projects Created Over Time (Last 6 Months)
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Most Used Tags -->
+                <div class="col-lg-4">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="bi bi-tags-fill text-warning"></i>
+                            Most Popular Tags
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="tagsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 3 -->
+            <div class="row g-3">
+                <!-- Activity Heatmap -->
+                <div class="col-lg-12">
+                    <div class="chart-card">
+                        <div class="chart-title">
+                            <i class="bi bi-fire text-danger"></i>
+                            Project Activity - Days Since Last Worked
+                            <span class="badge bg-info ms-2">Shows which projects need attention!</span>
+                        </div>
+                        <div class="chart-wrapper chart-wrapper-tall">
+                            <canvas id="heatmapChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Note -->
+            <div class="text-center mt-4 p-3 bg-light rounded" style="--bs-bg-opacity: .3;">
+                <p class="text-muted mb-0">
+                    <i class="bi bi-lightbulb-fill me-2"></i>
+                    All charts are interactive! Hover over them to see details. Click on legends to toggle data series.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments :: footer}"></footer>
+
+</div>
+
+<!-- Scripts -->
+<th:block th:replace="~{fragments :: scripts-common}"></th:block>
+
+<script th:inline="javascript">
+    // Using the EXACT syntax that works in debug page
+    const statusLabels = [[${statusLabels}]];
+    const statusData = [[${statusData}]];
+    const githubLabels = [[${githubLabels}]];
+    const githubData = [[${githubData}]];
+    const timelineLabels = [[${timelineLabels}]];
+    const timelineData = [[${timelineData}]];
+    const tagLabels = [[${tagLabels}]];
+    const tagData = [[${tagData}]];
+    const activityLabels = [[${activityLabels}]];
+    const activityData = [[${activityData}]];
+
+    console.log('=== Chart Data Loaded ===');
+    console.log('Status:', statusLabels, statusData);
+    console.log('GitHub:', githubLabels, githubData);
+    console.log('Timeline:', timelineLabels, timelineData);
+    console.log('Tags:', tagLabels, tagData);
+    console.log('Activity:', activityLabels, activityData);
+
+    // Get theme colors
+    function getThemeColors() {
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            textColor: isDark ? '#f8f9fa' : '#495057',  // Darker gray for light mode
+            gridColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)'  // Slightly more visible grid
+        };
+    }
+
+    const colors = getThemeColors();
+
+    // Chart.js Global Config
+    Chart.defaults.font.family = "'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif";
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.color = colors.textColor;
+
+    // 1. Status Distribution Bar Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: statusLabels.map(l => l.replace('_', ' ')),
+            datasets: [{
+                label: 'Number of Projects',
+                data: statusData,
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(25, 135, 84, 0.7)'
+                ],
+                borderColor: [
+                    'rgb(220, 53, 69)',
+                    'rgb(255, 193, 7)',
+                    'rgb(25, 135, 84)'
+                ],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        color: colors.textColor
+                    },
+                    grid: { color: colors.gridColor }
+                },
+                x: {
+                    ticks: { color: colors.textColor },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 2. GitHub Pie Chart
+    const githubCtx = document.getElementById('githubChart').getContext('2d');
+    const githubChart = new Chart(githubCtx, {
+        type: 'doughnut',
+        data: {
+            labels: githubLabels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+            datasets: [{
+                data: githubData,
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(108, 117, 125, 0.7)'
+                ],
+                borderColor: [
+                    'rgb(13, 110, 253)',
+                    'rgb(108, 117, 125)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12 },
+                        color: colors.textColor
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} projects (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // 3. Projects Over Time Line Chart
+    const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+    const timelineChart = new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+            labels: timelineLabels,
+            datasets: [{
+                label: 'Projects Created',
+                data: timelineData,
+                borderColor: 'rgb(13, 110, 253)',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: 'rgb(13, 110, 253)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        color: colors.textColor
+                    },
+                    grid: { color: colors.gridColor }
+                },
+                x: {
+                    ticks: { color: colors.textColor },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 4. Most Used Tags Horizontal Bar
+    const tagsCtx = document.getElementById('tagsChart').getContext('2d');
+    const tagsChart = new Chart(tagsCtx, {
+        type: 'bar',
+        data: {
+            labels: tagLabels,
+            datasets: [{
+                label: 'Projects',
+                data: tagData,
+                backgroundColor: [
+                    'rgba(102, 126, 234, 0.7)',
+                    'rgba(118, 75, 162, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(201, 203, 207, 0.7)',
+                    'rgba(255, 99, 71, 0.7)'
+                ],
+                borderRadius: 8,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        color: colors.textColor
+                    },
+                    grid: { color: colors.gridColor }
+                },
+                y: {
+                    ticks: {
+                        color: colors.textColor,
+                        font: { size: 11 }
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // 5. Activity Heatmap
+    const heatmapCtx = document.getElementById('heatmapChart').getContext('2d');
+    const heatmapChart = new Chart(heatmapCtx, {
+        type: 'bar',
+        data: {
+            labels: activityLabels,
+            datasets: [{
+                label: 'Days Since Last Worked',
+                data: activityData,
+                backgroundColor: function(context) {
+                    const value = context.parsed.x;
+                    if (value <= 7) return 'rgba(25, 135, 84, 0.7)';
+                    if (value <= 30) return 'rgba(255, 193, 7, 0.7)';
+                    return 'rgba(220, 53, 69, 0.7)';
+                },
+                borderRadius: 6,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    displayColors: false,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            const days = context.parsed.x;
+                            let status = '';
+                            if (days <= 7) status = '🟢 Active';
+                            else if (days <= 30) status = '🟡 Warm';
+                            else status = '🔴 Cold';
+                            return `${status} - ${days} days ago`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: { color: colors.textColor },
+                    grid: { color: colors.gridColor }
+                },
+                y: {
+                    ticks: {
+                        color: colors.textColor,
+                        font: { size: 11 }
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    console.log('✅ All 5 charts created successfully!');
+
+    // Listen for theme changes (using existing themeToggle from fragments)
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#themeToggle')) {
+            setTimeout(() => {
+                const newColors = getThemeColors();
+
+                // Update all charts with new colors
+                [statusChart, githubChart, timelineChart, tagsChart, heatmapChart].forEach(chart => {
+                    if (chart.options.scales) {
+                        if (chart.options.scales.x) {
+                            chart.options.scales.x.ticks.color = newColors.textColor;
+                            if (chart.options.scales.x.grid) {
+                                chart.options.scales.x.grid.color = newColors.gridColor;
+                            }
+                        }
+                        if (chart.options.scales.y) {
+                            chart.options.scales.y.ticks.color = newColors.textColor;
+                            if (chart.options.scales.y.grid) {
+                                chart.options.scales.y.grid.color = newColors.gridColor;
+                            }
+                        }
+                    }
+                    if (chart.options.plugins?.legend?.labels) {
+                        chart.options.plugins.legend.labels.color = newColors.textColor;
+                    }
+                    chart.update();
+                });
+
+                console.log('🎨 Charts updated for theme change');
+            }, 100);
+        }
+    });
+</script>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+
+        const time = now.toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        const date = now.toLocaleDateString('en-GB', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        document.getElementById('currentTime').textContent = time;
+        document.getElementById('currentDate').textContent = date;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+
+</body>
+</html>
