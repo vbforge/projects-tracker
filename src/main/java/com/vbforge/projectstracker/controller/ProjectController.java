@@ -8,10 +8,12 @@ import com.vbforge.projectstracker.entity.ProjectStatus;
 import com.vbforge.projectstracker.service.ProjectService;
 import com.vbforge.projectstracker.service.TagService;
 import com.vbforge.projectstracker.util.SecurityUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -134,10 +136,19 @@ public class ProjectController {
 
     @PostMapping("/projects/add")
     public String addProject(
-            @ModelAttribute Project project,
+            @Valid @ModelAttribute Project project,
+            BindingResult bindingResult,
             @RequestParam(required = false) List<Long> tagIds,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            Model model) {
         User currentUser = securityUtils.getCurrentUser();
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("allTags", tagService.getAllTagsOrderedByName(currentUser));
+            model.addAttribute("statuses", ProjectStatus.values());
+            return "project-form";
+        }
+
         try {
             project.setOwner(currentUser);
             Project saved = projectService.saveProject(project);
@@ -166,10 +177,20 @@ public class ProjectController {
     @PostMapping("/projects/{id}/update")
     public String updateProject(
             @PathVariable Long id,
-            @ModelAttribute Project project,
+            @Valid @ModelAttribute Project project,
+            BindingResult bindingResult,
             @RequestParam(required = false) List<Long> tagIds,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            Model model) {
         User currentUser = securityUtils.getCurrentUser();
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("project", project);
+            model.addAttribute("allTags", tagService.getAllTagsOrderedByName(currentUser));
+            model.addAttribute("statuses", ProjectStatus.values());
+            return "project-form";
+        }
+
         try {
             projectService.updateProject(id, project, currentUser);
             projectService.updateProjectTags(id, tagIds != null ? tagIds : List.of(), currentUser);

@@ -1,6 +1,8 @@
 package com.vbforge.projectstracker.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -22,6 +24,8 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Project title is required")
+    @Size(min = 1, max = 255, message = "Title must be between 1 and 255 characters")
     @Column(nullable = false)
     private String title;
 

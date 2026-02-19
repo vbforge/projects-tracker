@@ -9,18 +9,39 @@
 - 📥 Export to CSV and HTML
 - 📱 Responsive design
 - 🌓 Dark/Light modes
+- 👤🔐 Login/Registration (Security)
 
 ---
 
-![DASHBOARD](src/main/resources/static/images/dashboard-page.png)
+![login](src/main/resources/static/images/screens/login-page.png)
 
 ---
 
-![STATISTICS](src/main/resources/static/images/statistics-page.png)
+![register](src/main/resources/static/images/screens/register-page.png)
 
 ---
 
-![HTML REPORT EXAMPLE](src/main/resources/static/images/screen-HTML-report.png)
+![table](src/main/resources/static/images/screens/projects-table-page.png)
+
+---
+
+![cards](src/main/resources/static/images/screens/projects-cards-page.png)
+
+---
+
+![cards-light](src/main/resources/static/images/screens/projects-cards-light-page.png)
+
+---
+
+![card](src/main/resources/static/images/screens/card-page.png)
+
+---
+
+![statistics](src/main/resources/static/images/screens/statistics-page.png)
+
+---
+
+![html-reprot](src/main/resources/static/images/screens/html-report-page.png)
 
 ---
 

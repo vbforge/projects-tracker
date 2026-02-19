@@ -40,9 +40,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show modern-alert">
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show modern-alert">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                <span th:text="${error}"></span>
+                <span th:text="${errorMessage}"></span>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
