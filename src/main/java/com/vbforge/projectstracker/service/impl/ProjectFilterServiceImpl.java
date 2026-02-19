@@ -2,11 +2,13 @@ package com.vbforge.projectstracker.service.impl;
 
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
+import com.vbforge.projectstracker.entity.User;
 import com.vbforge.projectstracker.service.ProjectFilterService;
 import com.vbforge.projectstracker.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.YearMonth;
 import java.util.Collections;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProjectFilterServiceImpl implements ProjectFilterService {
 
     private final ProjectService projectService;
@@ -32,10 +35,11 @@ public class ProjectFilterServiceImpl implements ProjectFilterService {
             List<String> tags,
             String createdMonth,
             String lastWorkedMonth,
-            String sortBy) {
+            String sortBy,
+            User owner) {
 
-        log.debug("Filtering projects - search: {}, status: {}, onGithub: {}, tags: {}, createdMonth: {}, lastWorkedMonth: {}, sortBy: {}",
-                search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy);
+        log.debug("Filtering projects for user {} with criteria - search: {}, status: {}, onGithub: {}, tags: {}, createdMonth: {}, lastWorkedMonth: {}, sortBy: {}",
+                owner, search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy);
 
         // Remove duplicate tags if present
         if (tags != null && !tags.isEmpty()) {
@@ -43,7 +47,7 @@ public class ProjectFilterServiceImpl implements ProjectFilterService {
         }
 
         // STEP 1: Apply filters to get projects
-        List<Project> projects = applyFilters(search, status, onGithub, tags, createdMonth, lastWorkedMonth);
+        List<Project> projects = applyFilters(search, status, onGithub, tags, createdMonth, lastWorkedMonth, owner);
 
         // STEP 2: Apply sorting
         projects = applySorting(projects, sortBy);
@@ -128,25 +132,26 @@ public class ProjectFilterServiceImpl implements ProjectFilterService {
             Boolean onGithub,
             List<String> tags,
             String createdMonth,
-            String lastWorkedMonth) {
+            String lastWorkedMonth,
+            User owner) {
 
         // PRIORITY 1: Month filters (these take absolute priority)
         if (createdMonth != null && !createdMonth.isEmpty()) {
             log.debug("Filtering by created month: {}", createdMonth);
             YearMonth yearMonth = YearMonth.parse(createdMonth);
-            return projectService.getProjectsCreatedInMonth(yearMonth);
+            return projectService.getProjectsCreatedInMonth(yearMonth, owner);
         }
 
         if (lastWorkedMonth != null && !lastWorkedMonth.isEmpty()) {
             log.debug("Filtering by last worked month: {}", lastWorkedMonth);
             YearMonth yearMonth = YearMonth.parse(lastWorkedMonth);
-            return projectService.getProjectsLastWorkedInMonth(yearMonth);
+            return projectService.getProjectsLastWorkedInMonth(yearMonth, owner);
         }
 
         // PRIORITY 2: Tag filters with other filters
         if (tags != null && !tags.isEmpty()) {
             log.debug("Filtering by tags: {}", tags);
-            List<Project> taggedProjects = projectService.getProjectsByTags(tags);
+            List<Project> taggedProjects = projectService.getProjectsByTags(tags, owner);
 
             // Apply additional filters on top of tag results
             return taggedProjects.stream()
@@ -159,12 +164,12 @@ public class ProjectFilterServiceImpl implements ProjectFilterService {
         // PRIORITY 3: Regular filters without tags
         if (hasBasicFilters(search, status, onGithub)) {
             log.debug("Filtering with basic filters");
-            return projectService.searchProjects(search, status, onGithub, null);
+            return projectService.searchProjects(search, status, onGithub, null, owner);
         }
 
         // NO FILTERS: Return all projects
         log.debug("No filters applied, returning all projects");
-        return projectService.getAllProjects();
+        return projectService.getAllProjects(owner);
     }
 
     /**

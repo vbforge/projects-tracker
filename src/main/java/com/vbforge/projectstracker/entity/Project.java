@@ -55,7 +55,12 @@ public class Project {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Many-to-Many relationship with Tags
+    //Owner - every project belongs to exactly one user
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User owner;
+
+    // Many-to-Many relationship with Tags (tags are also per-user)
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "project_tags",
@@ -88,7 +93,7 @@ public class Project {
         tag.getProjects().remove(this);
     }
 
-    //method for thymeleaf to calculate and cast to LocalDate; property need for table performing
+    // Calculated property for Thymeleaf
     public long getDaysSinceLastWorked() {
         return ChronoUnit.DAYS.between(lastWorkedOn.toLocalDate(), LocalDate.now());
     }

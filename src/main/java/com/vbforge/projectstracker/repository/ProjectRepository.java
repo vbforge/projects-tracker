@@ -2,6 +2,7 @@ package com.vbforge.projectstracker.repository;
 
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
+import com.vbforge.projectstracker.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,61 +10,56 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    //find projects by status
-    List<Project> findByStatus(ProjectStatus status);
+    // All queries scoped to owner
+    List<Project> findAllByOwner(User owner);
 
-    //find projects by on GitHub status
-    List<Project> findByOnGithub(Boolean onGithub);
+    Optional<Project> findByIdAndOwner(Long id, User owner);
 
-    //find projects by title containing (case-insensitive search)
-    List<Project> findByTitleContainingIgnoreCase(String title);
+    List<Project> findByStatusAndOwner(ProjectStatus status, User owner);
 
-    //find projects created between dates
-    List<Project> findByCreatedDateBetween(LocalDateTime start, LocalDateTime end);
+    List<Project> findByOnGithubAndOwner(Boolean onGithub, User owner);
 
-    //find projects by last worked on between dates
-    List<Project> findByLastWorkedOnBetween(LocalDateTime start, LocalDateTime end);
+    List<Project> findByTitleContainingIgnoreCaseAndOwner(String title, User owner);
 
-    //find projects by tag name
-    @Query("SELECT p FROM Project p JOIN p.tags t WHERE t.name = :tagName")
-    List<Project> findByTagName(@Param("tagName") String tagName);
+    List<Project> findByCreatedDateBetweenAndOwner(LocalDateTime start, LocalDateTime end, User owner);
 
-    // Find projects by multiple tag names
-    @Query("SELECT DISTINCT p FROM Project p JOIN p.tags t WHERE t.name IN :tagNames")
-    List<Project> findByTagNames(@Param("tagNames") List<String> tagNames);
+    List<Project> findByLastWorkedOnBetweenAndOwner(LocalDateTime start, LocalDateTime end, User owner);
 
-    //find projects by ProjectStatus and GitHub status
-    List<Project> findByStatusAndOnGithub(ProjectStatus status, Boolean onGithub);
+    List<Project> findAllByOwnerOrderByLastWorkedOnDesc(User owner);
 
-    //count projects by status
-    long countByStatus(ProjectStatus status);
+    List<Project> findAllByOwnerOrderByCreatedDateDesc(User owner);
 
-    //count projects on GitHub
-    long countByOnGithub(Boolean onGithub);
+    // Count queries
+    long countByOwner(User owner);
 
-    //custom query: searching by multi-filter
+    long countByStatusAndOwner(ProjectStatus status, User owner);
+
+    long countByOnGithubAndOwner(Boolean onGithub, User owner);
+
+    // Tag-based queries
+    @Query("SELECT p FROM Project p JOIN p.tags t WHERE t.name = :tagName AND p.owner = :owner")
+    List<Project> findByTagNameAndOwner(@Param("tagName") String tagName, @Param("owner") User owner);
+
+    @Query("SELECT DISTINCT p FROM Project p JOIN p.tags t WHERE t.name IN :tagNames AND p.owner = :owner")
+    List<Project> findByTagNamesAndOwner(@Param("tagNames") List<String> tagNames, @Param("owner") User owner);
+
+    // Multi-filter search
     @Query("SELECT DISTINCT p FROM Project p LEFT JOIN p.tags t " +
-            "WHERE (:title IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%')))" +
-            "AND (:status IS NULL OR p.status = :status)" +
-            "AND (:onGithub IS NULL OR p.onGithub = :onGithub)" +
+            "WHERE p.owner = :owner " +
+            "AND (:title IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "AND (:onGithub IS NULL OR p.onGithub = :onGithub) " +
             "AND (:tagName IS NULL OR t.name = :tagName)")
     List<Project> searchProjects(
+            @Param("owner") User owner,
             @Param("title") String title,
             @Param("status") ProjectStatus status,
             @Param("onGithub") Boolean onGithub,
             @Param("tagName") String tagName
     );
-
-    // Find all projects ordered by last worked on (most recent first)
-    List<Project> findAllByOrderByLastWorkedOnDesc();
-
-    // Find all projects ordered by created date (newest first)
-    List<Project> findAllByOrderByCreatedDateDesc();
-
-
-
 }

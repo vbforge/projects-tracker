@@ -178,7 +178,9 @@
                                            th:id="'tag-' + ${tag.id}"
                                            name="tagIds"
                                            th:value="${tag.id}"
-                                           th:checked="${project.tagIds != null && project.tagIds.contains(tag.id)}">
+                                           th:checked="${project.tags != null and #lists.contains(project.tags, tag)}">
+
+
                                     <label class="form-check-label"
                                            th:for="'tag-' + ${tag.id}">
                                         <span class="tag-badge"

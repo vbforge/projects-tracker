@@ -23,6 +23,7 @@ public class TagMapper {
 
         Integer projectCount = tag.getProjects() != null ? tag.getProjects().size() : 0;
 
+        // Using builder (if TagDTO has Lombok @Builder)
         return TagDTO.builder()
                 .id(tag.getId())
                 .name(tag.getName())
@@ -32,13 +33,26 @@ public class TagMapper {
                 .updatedAt(tag.getUpdatedAt())
                 .projectCount(projectCount)
                 .build();
+
+        // OR using constructor (if TagDTO doesn't have Lombok @Builder)
+        // return new TagDTO(
+        //     tag.getId(),
+        //     tag.getName(),
+        //     tag.getColor(),
+        //     tag.getDescription(),
+        //     tag.getCreatedDate(),
+        //     tag.getUpdatedAt(),
+        //     projectCount
+        // );
     }
 
     /**
      * Convert TagDTO to Tag entity
+     * NOTE: Owner must be set separately in the service layer!
+     * This is by design - the owner should come from SecurityContext, not from DTO.
      *
      * @param dto the DTO
-     * @return the entity
+     * @return the entity (without owner set)
      */
     public Tag toEntity(TagDTO dto) {
         if (dto == null) {
@@ -50,11 +64,13 @@ public class TagMapper {
                 .name(dto.getName())
                 .color(dto.getColor())
                 .description(dto.getDescription())
+                // NOTE: owner is NOT set here - it must be set in the service layer
                 .build();
     }
 
     /**
      * Update existing Tag entity from TagDTO
+     * Does NOT update owner - owner is immutable after creation
      *
      * @param tag the existing entity
      * @param dto the DTO with new values
@@ -67,6 +83,7 @@ public class TagMapper {
         tag.setName(dto.getName());
         tag.setColor(dto.getColor());
         tag.setDescription(dto.getDescription());
-        // Note: createdDate and updatedAt are managed by @PrePersist/@PreUpdate
+        // Note: createdDate, updatedAt are managed by @PrePersist/@PreUpdate
+        // Note: owner is NOT updated - it's immutable
     }
 }

@@ -1,8 +1,8 @@
 package com.vbforge.projectstracker.service.impl;
 
-import com.vbforge.projectstracker.exception.DuplicateResourceException;
-import com.vbforge.projectstracker.exception.ResourceNotFoundException;
 import com.vbforge.projectstracker.entity.Tag;
+import com.vbforge.projectstracker.entity.User;
+import com.vbforge.projectstracker.exception.ResourceNotFoundException;
 import com.vbforge.projectstracker.repository.TagRepository;
 import com.vbforge.projectstracker.service.TagService;
 import lombok.RequiredArgsConstructor;
@@ -13,139 +13,82 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class TagServiceImpl implements TagService {
 
-    public static final String TAG_COLOR_DEFAULT = "#e7f3ff";
     private final TagRepository tagRepository;
 
     @Override
-    public List<Tag> getAllTags() {
-        log.debug("Getting all tags");
-        return tagRepository.findAll();
+    public List<Tag> getAllTags(User owner) {
+        log.debug("Getting all tags for user: {}", owner.getUsername());
+        return tagRepository.findAllByOwner(owner);
     }
 
     @Override
-    public List<Tag> getAllTagsOrderedByName() {
-        log.debug("Getting all tags ordered by name");
-        return tagRepository.findAllByOrderByNameAsc();
+    public Optional<Tag> getTagById(Long id, User owner) {
+        return tagRepository.findByIdAndOwner(id, owner);
     }
 
     @Override
-    public List<Tag> getAllTagsOrderedByPopularity() {
-        log.debug("Getting all tags ordered by popularity");
-        return tagRepository.findAllOrderByProjectCountDesc(); //most popular first
+    public Optional<Tag> getTagByName(String name, User owner) {
+        return tagRepository.findByNameAndOwner(name, owner);
     }
 
     @Override
-    public Optional<Tag> getTagById(Long id) {
-        log.debug("Getting tag by id: {}", id);
-        return tagRepository.findById(id);
-    }
-
-    @Override
-    public Optional<Tag> getTagByName(String name) {
-        log.debug("Getting tag by name: {}", name);
-        return tagRepository.findByName(name);
-    }
-
-    @Override
-    public Tag createTag(Tag tag) {
-        log.info("Creating new tag: {}", tag.getName());
-
-        //check if tag with same name is already exist
-        if(tagRepository.existsByName(tag.getName())) {
-            log.error("Tag with name {} already exists", tag.getName());
-            throw new DuplicateResourceException("Tag", "name", tag.getName());
+    public Tag saveTag(Tag tag) {
+        if (tag.getOwner() == null) {
+            throw new IllegalArgumentException("Tag must have an owner before saving");
         }
-
+        log.info("Saving tag: {} for user: {}", tag.getName(), tag.getOwner().getUsername());
         return tagRepository.save(tag);
     }
 
     @Override
-    public Tag updateTag(Long id, Tag updatedTag) {
-        log.info("Updating tag by id: {}", id);
-        return tagRepository.findById(id)
-                .map(tag->{
-                    //check if new name conflicts with another tag
-                    if(!tag.getName().equals(updatedTag.getName()) && tagRepository.existsByName(updatedTag.getName())) { //with (!) updating only color available
-                        log.error("Tag already exists with name: {}", updatedTag.getName());
-                        throw new DuplicateResourceException("Tag", "name", updatedTag.getName());
-                    }
+    public Tag updateTag(Long id, Tag updatedTag, User owner) {
+        log.info("Updating tag id={} for user: {}", id, owner.getUsername());
+        return tagRepository.findByIdAndOwner(id, owner)
+                .map(tag -> {
                     tag.setName(updatedTag.getName());
                     tag.setColor(updatedTag.getColor());
                     tag.setDescription(updatedTag.getDescription());
                     return tagRepository.save(tag);
                 })
-                .orElseThrow(()-> {
-                    log.error("No tag found with id: {}", id);
-                    return new ResourceNotFoundException("Tag", "id", id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", "id", id));
     }
 
     @Override
-    public void deleteTag(Long id) {
-        log.info("Deleting tag with id: {}", id);
-
-        if (!tagRepository.existsById(id)) {
-            log.error("Tag not found with id: {}", id);
-            throw new ResourceNotFoundException("Tag", "id", id);
-        }
-
-        tagRepository.deleteById(id);
-
+    public void deleteTag(Long id, User owner) {
+        log.info("Deleting tag id={} for user: {}", id, owner.getUsername());
+        Tag tag = tagRepository.findByIdAndOwner(id, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", "id", id));
+        tagRepository.delete(tag);
     }
 
     @Override
-    public List<Tag> getTagsWithProjects() {
-        log.debug("Getting tags with projects");
-        return tagRepository.findTagsWithProjects();
+    public boolean existsByName(String name, User owner) {
+        return tagRepository.existsByNameAndOwner(name, owner);
     }
 
     @Override
-    public List<Tag> getUnusedTags() {
-        log.debug("Getting unused tags");
-        return tagRepository.findUnusedTags();
+    public List<Tag> getAllTagsOrderedByName(User owner) {
+        return tagRepository.findAllByOwnerOrderByNameAsc(owner);
     }
 
     @Override
-    public boolean tagExists(String name) {
-        return tagRepository.existsByName(name);
+    public List<Tag> getAllTagsOrderedByPopularity(User owner) {
+        return tagRepository.findAllByOwnerOrderByProjectCountDesc(owner);
     }
 
     @Override
-    public long getTotalTagCount() {
-        return tagRepository.count();
+    public List<Tag> getTagsWithProjects(User owner) {
+        return tagRepository.findTagsWithProjectsByOwner(owner);
     }
 
     @Override
-    public Tag findOrCreateTag(String name, String color) {
-        log.debug("Getting or creating tag by name: {}", name);
-
-        return tagRepository.findByNameIgnoreCase(name)
-                .orElseGet(() -> {
-                    log.info("Tag not found, creating new tag: {}", name);
-                    Tag newTag = Tag.builder()
-                            .name(name)
-                            .color(color != null ? color : TAG_COLOR_DEFAULT)
-                            .build();
-                    return tagRepository.save(newTag);
-                });
+    public List<Tag> getUnusedTags(User owner) {
+        return tagRepository.findUnusedTagsByOwner(owner);
     }
-
-
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -2,6 +2,7 @@ package com.vbforge.projectstracker.service;
 
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
+import com.vbforge.projectstracker.entity.User;
 
 import java.util.List;
 
@@ -30,7 +31,8 @@ public interface ProjectFilterService {
             List<String> tags,
             String createdMonth,
             String lastWorkedMonth,
-            String sortBy
+            String sortBy,
+            User owner
     );
 
     /**

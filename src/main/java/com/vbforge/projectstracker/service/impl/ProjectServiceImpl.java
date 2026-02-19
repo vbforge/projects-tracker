@@ -1,13 +1,13 @@
 package com.vbforge.projectstracker.service.impl;
 
-import com.vbforge.projectstracker.exception.ResourceNotFoundException;
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
 import com.vbforge.projectstracker.entity.Tag;
+import com.vbforge.projectstracker.entity.User;
+import com.vbforge.projectstracker.exception.ResourceNotFoundException;
 import com.vbforge.projectstracker.repository.ProjectRepository;
 import com.vbforge.projectstracker.repository.TagRepository;
 import com.vbforge.projectstracker.service.ProjectService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,9 +18,9 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class ProjectServiceImpl implements ProjectService {
 
@@ -28,27 +28,27 @@ public class ProjectServiceImpl implements ProjectService {
     private final TagRepository tagRepository;
 
     @Override
-    public List<Project> getAllProjects() {
-        log.debug("Getting all projects");
-        return projectRepository.findAll();
+    public List<Project> getAllProjects(User owner) {
+        log.debug("Getting all projects for user: {}", owner.getUsername());
+        return projectRepository.findAllByOwner(owner);
     }
 
     @Override
-    public Optional<Project> getProjectById(Long id) {
-        log.debug("Getting project by id: {}", id);
-        return projectRepository.findById(id);
+    public Optional<Project> getProjectByIdAndOwner(Long id, User owner) {
+        log.debug("Getting project id={} for user: {}", id, owner.getUsername());
+        return projectRepository.findByIdAndOwner(id, owner);
     }
 
     @Override
     public Project saveProject(Project project) {
-        log.info("Saving new project: {}", project.getTitle());
+        log.info("Saving project: {} for user: {}", project.getTitle(), project.getOwner().getUsername());
         return projectRepository.save(project);
     }
 
     @Override
-    public Project updateProject(Long id, Project updatedProject) {
-        log.info("Updating project with id: {}", id);
-        return projectRepository.findById(id)
+    public Project updateProject(Long id, Project updatedProject, User owner) {
+        log.info("Updating project id={} for user: {}", id, owner.getUsername());
+        return projectRepository.findByIdAndOwner(id, owner)
                 .map(project -> {
                     project.setTitle(updatedProject.getTitle());
                     project.setDescription(updatedProject.getDescription());
@@ -60,162 +60,128 @@ public class ProjectServiceImpl implements ProjectService {
                     project.setLastWorkedOn(LocalDateTime.now());
                     return projectRepository.save(project);
                 })
-                .orElseThrow(()->{
-                    log.error("Project not found with id: {}", id);
-                    return new ResourceNotFoundException("Project", "id", id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
     }
 
     @Override
-    public void deleteProject(Long id) {
-        log.info("Deleting project with id: {}", id);
-        if(!projectRepository.existsById(id)) {
-            log.error("Project not found with id: {}", id);
-            throw new ResourceNotFoundException("Project", "id", id);
-        }
-        projectRepository.deleteById(id);
+    public void deleteProject(Long id, User owner) {
+        log.info("Deleting project id={} for user: {}", id, owner.getUsername());
+        Project project = projectRepository.findByIdAndOwner(id, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
+        projectRepository.delete(project);
     }
 
     @Override
-    public List<Project> getProjectsByStatus(ProjectStatus status) {
-        log.debug("Getting projects by status: {}", status);
-        return projectRepository.findByStatus(status);
+    public List<Project> getProjectsByStatus(ProjectStatus status, User owner) {
+        return projectRepository.findByStatusAndOwner(status, owner);
     }
 
     @Override
-    public List<Project> getProjectsByGithubStatus(boolean onGithub) {
-        log.debug("Getting projects by github status: {}", onGithub);
-        return projectRepository.findByOnGithub(onGithub);
+    public List<Project> getProjectsByGithubStatus(boolean onGithub, User owner) {
+        return projectRepository.findByOnGithubAndOwner(onGithub, owner);
     }
 
     @Override
-    public List<Project> searchProjectsByTitle(String title) {
-        log.debug("Searching projects with title containing: {}", title);
-        return projectRepository.findByTitleContainingIgnoreCase(title);
+    public List<Project> searchProjectsByTitle(String title, User owner) {
+        return projectRepository.findByTitleContainingIgnoreCaseAndOwner(title, owner);
     }
 
     @Override
-    public List<Project> getProjectsByTag(String tagName) {
-        log.debug("Getting projects by tag: {}", tagName);
-        return projectRepository.findByTagName(tagName);
+    public List<Project> getProjectsByTag(String tagName, User owner) {
+        return projectRepository.findByTagNameAndOwner(tagName, owner);
     }
 
     @Override
-    public List<Project> getProjectsByTags(List<String> tagNames) {
-        log.debug("Getting projects by tags: {}", tagNames);
-        if(tagNames == null || tagNames.isEmpty()) {
-            return getAllProjects();
-        }
-        return projectRepository.findByTagNames(tagNames);
+    public List<Project> getProjectsByTags(List<String> tagNames, User owner) {
+        return projectRepository.findByTagNamesAndOwner(tagNames, owner);
     }
 
     @Override
-    public List<Project> getProjectsCreatedInMonth(YearMonth yearMonth) {
-        log.debug("Getting projects created in month: {}", yearMonth);
+    public List<Project> getProjectsCreatedInMonth(YearMonth yearMonth, User owner) {
         LocalDateTime start = yearMonth.atDay(1).atStartOfDay();
         LocalDateTime end = yearMonth.atEndOfMonth().atTime(23, 59, 59);
-        return projectRepository.findByCreatedDateBetween(start, end);
+        return projectRepository.findByCreatedDateBetweenAndOwner(start, end, owner);
     }
 
     @Override
-    public List<Project> getProjectsLastWorkedInMonth(YearMonth yearMonth) {
-        log.debug("Getting projects last worked in month: {}", yearMonth);
+    public List<Project> getProjectsLastWorkedInMonth(YearMonth yearMonth, User owner) {
         LocalDateTime start = yearMonth.atDay(1).atStartOfDay();
         LocalDateTime end = yearMonth.atEndOfMonth().atTime(23, 59, 59);
-        return projectRepository.findByLastWorkedOnBetween(start, end);
+        return projectRepository.findByLastWorkedOnBetweenAndOwner(start, end, owner);
     }
 
     @Override
-    public List<Project> searchProjects(String title, ProjectStatus status, Boolean onGithub, String tagName) {
-        log.debug("Searching projects with filters - title: {}, status: {}, onGithub: {}, tag: {}",
-                title, status, onGithub, tagName);
-        return projectRepository.searchProjects(title, status, onGithub, tagName);
+    public List<Project> searchProjects(String title, ProjectStatus status, Boolean onGithub, String tagName, User owner) {
+        return projectRepository.searchProjects(owner, title, status, onGithub, tagName);
     }
 
     @Override
-    public List<Project> getRecentProjects() {
-        log.debug("Getting recent projects");
-        return projectRepository.findAllByOrderByLastWorkedOnDesc(); //return projects by last worked on
+    public List<Project> getRecentProjects(User owner) {
+        return projectRepository.findAllByOwnerOrderByLastWorkedOnDesc(owner);
     }
 
     @Override
-    public long getTotalProjectCount() {
-        return projectRepository.count();
+    public long getTotalProjectCount(User owner) {
+        return projectRepository.countByOwner(owner);
     }
 
     @Override
-    public long getCompletedProjectCount() {
-        return projectRepository.countByStatus(ProjectStatus.DONE);
+    public long getCompletedProjectCount(User owner) {
+        return projectRepository.countByStatusAndOwner(ProjectStatus.DONE, owner);
     }
 
     @Override
-    public long getInProgressProjectCount() {
-        return projectRepository.countByStatus(ProjectStatus.IN_PROGRESS);
+    public long getInProgressProjectCount(User owner) {
+        return projectRepository.countByStatusAndOwner(ProjectStatus.IN_PROGRESS, owner);
     }
 
     @Override
-    public long getNotStartedProjectCount() {
-        return projectRepository.countByStatus(ProjectStatus.NOT_STARTED);
+    public long getNotStartedProjectCount(User owner) {
+        return projectRepository.countByStatusAndOwner(ProjectStatus.NOT_STARTED, owner);
     }
 
     @Override
-    public long getGithubProjectCount() {
-        return projectRepository.countByOnGithub(true);
+    public long getGithubProjectCount(User owner) {
+        return projectRepository.countByOnGithubAndOwner(true, owner);
     }
 
     @Override
-    public Project addTagToProject(Long projectId, Long tagId) {
-        log.info("Adding tag id: {} to project with id: {}", tagId, projectId);
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(()-> new  ResourceNotFoundException("Project", "id", projectId));
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(()-> new ResourceNotFoundException("Tag", "id", tagId));
-
+    public Project addTagToProject(Long projectId, Long tagId, User owner) {
+        Project project = projectRepository.findByIdAndOwner(projectId, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
+        Tag tag = tagRepository.findByIdAndOwner(tagId, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", "id", tagId));
         project.addTag(tag);
-
         return projectRepository.save(project);
     }
 
     @Override
-    public Project removeTagFromProject(Long projectId, Long tagId) {
-        log.info("Removing tag id: {} from project with id: {}", tagId, projectId);
-
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(()-> new  ResourceNotFoundException("Project", "id", projectId));
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(()-> new ResourceNotFoundException("Tag", "id", tagId));
-
+    public Project removeTagFromProject(Long projectId, Long tagId, User owner) {
+        Project project = projectRepository.findByIdAndOwner(projectId, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
+        Tag tag = tagRepository.findByIdAndOwner(tagId, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag", "id", tagId));
         project.removeTag(tag);
-
         return projectRepository.save(project);
     }
 
     @Override
-    public Project updateProjectTags(Long projectId, List<Long> tagIds) {
-        log.info("Updating tags for project with id: {}", projectId);
+    public Project updateProjectTags(Long projectId, List<Long> tagIds, User owner) {
+        Project project = projectRepository.findByIdAndOwner(projectId, owner)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
 
-        Project project = projectRepository.findById(projectId).orElseThrow(()-> new ResourceNotFoundException("Project", "id", projectId));
-
-        //clear all tags
+        // Clear existing tags
         project.getTags().clear();
 
-        for (Long tagId : tagIds) {
-            Tag tag = tagRepository.findById(tagId).orElseThrow(()-> new  ResourceNotFoundException("Tag", "id", tagId));
-            project.addTag(tag);
+        // Add new tags (all must belong to owner)
+        if (tagIds != null && !tagIds.isEmpty()) {
+            for (Long tagId : tagIds) {
+                Tag tag = tagRepository.findByIdAndOwner(tagId, owner)
+                        .orElseThrow(() -> new ResourceNotFoundException("Tag", "id", tagId));
+                project.addTag(tag);
+            }
         }
 
         return projectRepository.save(project);
     }
 }
-
-
-
-
-
-
-
-
-
-
-

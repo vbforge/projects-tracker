@@ -2,6 +2,7 @@ package com.vbforge.projectstracker.service.impl;
 
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.Tag;
+import com.vbforge.projectstracker.entity.User;
 import com.vbforge.projectstracker.service.ExportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +24,9 @@ public class ExportServiceImpl implements ExportService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @Override
-    public byte[] exportToCSV(List<Project> projects) {
+    public byte[] exportToCSV(List<Project> projects, User owner) {
         log.debug("Exporting projects to CSV");
+        log.info("Generating CSV export for user: {}", owner.getUsername());
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              OutputStreamWriter osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
              PrintWriter writer = new PrintWriter(osw)) {
@@ -58,8 +60,9 @@ public class ExportServiceImpl implements ExportService {
     }
 
     @Override
-    public byte[] exportToHTML(List<Project> projects, String filterDescription) {
+    public byte[] exportToHTML(List<Project> projects, String filterDescription, User owner) {
         log.debug("Exporting projects to HTML");
+        log.info("Generating HTML export for user: {}", owner.getUsername());
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              OutputStreamWriter osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
              PrintWriter writer = new PrintWriter(osw)) {
@@ -70,13 +73,15 @@ public class ExportServiceImpl implements ExportService {
             long inProgressProjects = projects.stream().filter(p -> p.getStatus().name().equals("IN_PROGRESS")).count();
             long onGithubProjects = projects.stream().filter(Project::getOnGithub).count();
 
+            String ownerUsername = owner.getUsername();
+
             // Write HTML
             writer.println("<!DOCTYPE html>");
             writer.println("<html lang='en'>");
             writer.println("<head>");
             writer.println("    <meta charset='UTF-8'>");
             writer.println("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            writer.println("    <title>Project Tracker Export Report</title>");
+            writer.println("    <title>Projects Tracker Export Report</title>");
             writer.println("    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>");
             writer.println("    <style>");
             writer.println("        :root {");
@@ -228,11 +233,14 @@ public class ExportServiceImpl implements ExportService {
             // Header
             writer.println("    <div class='header'>");
             writer.println("        <div>");
-            writer.println("            <h1>Project Tracker Report</h1>");
-            writer.println("            <div class='meta'>" +
-                    (filterDescription != null ? filterDescription : "Full project export") +
-                    "</div>");
+            writer.println("            <h1>Projects Tracker Report</h1>");
+
+            writer.println("            <div class='meta'>Owner: <strong>" + ownerUsername + "</strong></div>");
+
+            writer.println("            <div class='meta'>" + (filterDescription != null ? filterDescription : "Full project export") + "</div>");
+
             writer.println("        </div>");
+
             writer.println("        <div class='meta'>Generated: " +
                     java.time.LocalDateTime.now().format(DATE_FORMATTER) +
                     "</div>");

@@ -1,11 +1,13 @@
 package com.vbforge.projectstracker.controller;
 
+import com.vbforge.projectstracker.entity.User;
 import com.vbforge.projectstracker.mapper.ProjectMapper;
 import com.vbforge.projectstracker.exception.ResourceNotFoundException;
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
 import com.vbforge.projectstracker.service.ProjectService;
 import com.vbforge.projectstracker.service.TagService;
+import com.vbforge.projectstracker.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -25,7 +27,7 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final TagService tagService;
-    private final ProjectMapper projectMapper;
+    private final SecurityUtils securityUtils;
 
     // Valid page sizes
     private static final List<Integer> PAGE_SIZES = List.of(10, 25, 50, 100);
@@ -42,61 +44,60 @@ public class ProjectController {
             @RequestParam(required = false, defaultValue = "lastWorked") String sortBy,
             @RequestParam(required = false, defaultValue = "0") int page,
             @RequestParam(required = false, defaultValue = "10") int size,
-            Model model
-    ) {
-        // Sanitize inputs
+            Model model) {
+
+        User currentUser = securityUtils.getCurrentUser();
+
+
         if (!PAGE_SIZES.contains(size)) size = DEFAULT_PAGE_SIZE;
         if (page < 0) page = 0;
         if (tags != null && !tags.isEmpty()) {
             tags = tags.stream().distinct().collect(Collectors.toList());
         }
 
-        // STEP 1: Get ALL filtered + sorted projects (same logic as before)
-        List<Project> allFiltered = getFilteredProjects(search, status, onGithub, tags, createdMonth, lastWorkedMonth);
+        // Filter + sort (scoped to current user)
+        List<Project> allFiltered = getFilteredProjects(
+                currentUser, search, status, onGithub, tags, createdMonth, lastWorkedMonth);
         allFiltered = applySorting(allFiltered, sortBy);
 
-        // STEP 2: Pagination math
+        // Pagination math
         int totalElements = allFiltered.size();
         int totalPages = totalElements == 0 ? 1 : (int) Math.ceil((double) totalElements / size);
         if (page >= totalPages) page = totalPages - 1;
         if (page < 0) page = 0;
-
         int fromIndex = page * size;
         int toIndex   = Math.min(fromIndex + size, totalElements);
-
-        // STEP 3: Slice the current page
         List<Project> pagedProjects = allFiltered.subList(fromIndex, toIndex);
 
-        int displayFrom = totalElements == 0 ? 0 : fromIndex + 1;
-        int displayTo   = toIndex;
+        // Stats (scoped to current user)
+        long totalProjects      = projectService.getTotalProjectCount(currentUser);
+        long completedProjects  = projectService.getCompletedProjectCount(currentUser);
+        long inProgressProjects = projectService.getInProgressProjectCount(currentUser);
+        long notStartedProjects = projectService.getNotStartedProjectCount(currentUser);
+        long githubProjects     = projectService.getGithubProjectCount(currentUser);
+        int completionRate = totalProjects == 0 ? 0 : (int) ((completedProjects  * 100.0) / totalProjects);
+        int githubRate     = totalProjects == 0 ? 0 : (int) ((githubProjects     * 100.0) / totalProjects);
+        int inProgressRate = totalProjects == 0 ? 0 : (int) ((inProgressProjects * 100.0) / totalProjects);
+        int notStartedRate = totalProjects == 0 ? 0 : (int) ((notStartedProjects * 100.0) / totalProjects);
 
-        // Statistics cards (always totals, not filtered)
-        long totalProjects     = projectService.getTotalProjectCount();
-        long completedProjects = projectService.getCompletedProjectCount();
-        long inProgressProjects = projectService.getInProgressProjectCount();
-        long notStartedProjects = projectService.getNotStartedProjectCount();
-        long githubProjects    = projectService.getGithubProjectCount();
-        int completionRate  = totalProjects == 0 ? 0 : (int) ((completedProjects  * 100.0) / totalProjects);
-        int githubRate      = totalProjects == 0 ? 0 : (int) ((githubProjects     * 100.0) / totalProjects);
-        int inProgressRate  = totalProjects == 0 ? 0 : (int) ((inProgressProjects * 100.0) / totalProjects);
-        int notStartedRate  = totalProjects == 0 ? 0 : (int) ((notStartedProjects * 100.0) / totalProjects);
-
-        var allTags = tagService.getAllTagsOrderedByPopularity();
-
-        // Model attributes
+        // Project list
         model.addAttribute("projects",           pagedProjects);
+
+        // Stats cards
         model.addAttribute("totalProjects",      totalProjects);
         model.addAttribute("completedProjects",  completedProjects);
         model.addAttribute("inProgressProjects", inProgressProjects);
         model.addAttribute("notStartedProjects", notStartedProjects);
         model.addAttribute("githubProjects",     githubProjects);
-        model.addAttribute("allTags",            allTags);
         model.addAttribute("completionRate",     completionRate);
+        model.addAttribute("githubRate",         githubRate);
         model.addAttribute("inProgressRate",     inProgressRate);
         model.addAttribute("notStartedRate",     notStartedRate);
-        model.addAttribute("githubRate",         githubRate);
 
-        // Filter state (for keeping filter values on form + active filter badges)
+        // Tags (scoped to current user)
+        model.addAttribute("allTags", tagService.getAllTagsOrderedByPopularity(currentUser));
+
+        // Filter state
         model.addAttribute("searchTerm",       search);
         model.addAttribute("selectedStatus",   status);
         model.addAttribute("selectedOnGithub", onGithub);
@@ -105,29 +106,28 @@ public class ProjectController {
         model.addAttribute("createdMonth",     createdMonth);
         model.addAttribute("lastWorkedMonth",  lastWorkedMonth);
         model.addAttribute("sortBy",           sortBy);
-        model.addAttribute("hasActiveFilters", hasFilters(search, status, onGithub, tags, createdMonth, lastWorkedMonth));
+        model.addAttribute("hasActiveFilters",
+                hasFilters(search, status, onGithub, tags, createdMonth, lastWorkedMonth));
 
         // Pagination state
         model.addAttribute("currentPage",   page);
         model.addAttribute("totalPages",    totalPages);
         model.addAttribute("pageSize",      size);
         model.addAttribute("totalElements", totalElements);
-        model.addAttribute("displayFrom",   displayFrom);
-        model.addAttribute("displayTo",     displayTo);
+        model.addAttribute("displayFrom",   totalElements == 0 ? 0 : fromIndex + 1);
+        model.addAttribute("displayTo",     toIndex);
         model.addAttribute("pageSizes",     PAGE_SIZES);
         model.addAttribute("hasPrevious",   page > 0);
         model.addAttribute("hasNext",       page < totalPages - 1);
-
-        log.debug("Dashboard: page={}/{}, size={}, showing {}-{} of {}",
-                page + 1, totalPages, size, displayFrom, displayTo, totalElements);
 
         return "dashboard";
     }
 
     @GetMapping("/projects/new")
     public String showNewProjectForm(Model model) {
+        User currentUser = securityUtils.getCurrentUser();
         model.addAttribute("project", new Project());
-        model.addAttribute("allTags", tagService.getAllTagsOrderedByName());
+        model.addAttribute("allTags", tagService.getAllTagsOrderedByName(currentUser));
         model.addAttribute("statuses", ProjectStatus.values());
         return "project-form";
     }
@@ -137,10 +137,12 @@ public class ProjectController {
             @ModelAttribute Project project,
             @RequestParam(required = false) List<Long> tagIds,
             RedirectAttributes redirectAttributes) {
+        User currentUser = securityUtils.getCurrentUser();
         try {
-            Project savedProject = projectService.saveProject(project);
+            project.setOwner(currentUser);
+            Project saved = projectService.saveProject(project);
             if (tagIds != null && !tagIds.isEmpty()) {
-                projectService.updateProjectTags(savedProject.getId(), tagIds);
+                projectService.updateProjectTags(saved.getId(), tagIds, currentUser);
             }
             redirectAttributes.addFlashAttribute("success", "Project created successfully!");
             return "redirect:/projects";
@@ -151,11 +153,12 @@ public class ProjectController {
     }
 
     @GetMapping("/projects/{id}/edit")
-    public String showEditProjectForm(@PathVariable long id, Model model) {
-        Project project = projectService.getProjectById(id)
+    public String showEditProjectForm(@PathVariable Long id, Model model) {
+        User currentUser = securityUtils.getCurrentUser();
+        Project project = projectService.getProjectByIdAndOwner(id, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
         model.addAttribute("project", project);
-        model.addAttribute("allTags", tagService.getAllTagsOrderedByName());
+        model.addAttribute("allTags", tagService.getAllTagsOrderedByName(currentUser));
         model.addAttribute("statuses", ProjectStatus.values());
         return "project-form";
     }
@@ -166,9 +169,10 @@ public class ProjectController {
             @ModelAttribute Project project,
             @RequestParam(required = false) List<Long> tagIds,
             RedirectAttributes redirectAttributes) {
+        User currentUser = securityUtils.getCurrentUser();
         try {
-            projectService.updateProject(id, project);
-            projectService.updateProjectTags(id, tagIds != null ? tagIds : List.of());
+            projectService.updateProject(id, project, currentUser);
+            projectService.updateProjectTags(id, tagIds != null ? tagIds : List.of(), currentUser);
             redirectAttributes.addFlashAttribute("success", "Project updated successfully!");
             return "redirect:/projects";
         } catch (Exception e) {
@@ -179,8 +183,9 @@ public class ProjectController {
 
     @PostMapping("/projects/{id}/delete")
     public String deleteProject(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        User currentUser = securityUtils.getCurrentUser();
         try {
-            projectService.deleteProject(id);
+            projectService.deleteProject(id, currentUser);
             redirectAttributes.addFlashAttribute("success", "Project deleted successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Error deleting project: " + e.getMessage());
@@ -190,53 +195,48 @@ public class ProjectController {
 
     @GetMapping("/projects/{id}")
     public String viewProject(@PathVariable Long id, Model model) {
-        Project project = projectService.getProjectById(id)
+        User currentUser = securityUtils.getCurrentUser();
+        Project project = projectService.getProjectByIdAndOwner(id, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
         model.addAttribute("project", project);
         return "project-detail";
     }
 
-    // ─── Private Helpers ────────────────────────────────────────────────────────
+    // === Helpers ===
 
-    private List<Project> getFilteredProjects(String search, ProjectStatus status, Boolean onGithub,
-                                              List<String> tags, String createdMonth, String lastWorkedMonth) {
+    private List<Project> getFilteredProjects(User owner, String search, ProjectStatus status,
+                                              Boolean onGithub, List<String> tags,
+                                              String createdMonth, String lastWorkedMonth) {
         if (createdMonth != null && !createdMonth.isEmpty()) {
-            return projectService.getProjectsCreatedInMonth(YearMonth.parse(createdMonth));
+            return projectService.getProjectsCreatedInMonth(YearMonth.parse(createdMonth), owner);
         }
         if (lastWorkedMonth != null && !lastWorkedMonth.isEmpty()) {
-            return projectService.getProjectsLastWorkedInMonth(YearMonth.parse(lastWorkedMonth));
+            return projectService.getProjectsLastWorkedInMonth(YearMonth.parse(lastWorkedMonth), owner);
         }
         if (tags != null && !tags.isEmpty()) {
-            return projectService.getProjectsByTags(tags).stream()
+            return projectService.getProjectsByTags(tags, owner).stream()
                     .filter(p -> search == null || search.isEmpty() ||
                             p.getTitle().toLowerCase().contains(search.toLowerCase()))
                     .filter(p -> status == null || p.getStatus() == status)
                     .filter(p -> onGithub == null || p.getOnGithub().equals(onGithub))
                     .toList();
         }
-        if (hasAnyFilter(search, status, onGithub)) {
-            return projectService.searchProjects(search, status, onGithub, null);
+        if ((search != null && !search.isEmpty()) || status != null || onGithub != null) {
+            return projectService.searchProjects(search, status, onGithub, null, owner);
         }
-        return projectService.getAllProjects();
+        return projectService.getAllProjects(owner);
     }
 
     private List<Project> applySorting(List<Project> projects, String sortBy) {
         if (projects == null || projects.isEmpty()) return projects;
         return switch (sortBy) {
             case "created" -> projects.stream()
-                    .sorted((a, b) -> b.getCreatedDate().compareTo(a.getCreatedDate()))
-                    .toList();
+                    .sorted((a, b) -> b.getCreatedDate().compareTo(a.getCreatedDate())).toList();
             case "title" -> projects.stream()
-                    .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()))
-                    .toList();
+                    .sorted((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle())).toList();
             default -> projects.stream()
-                    .sorted((a, b) -> b.getLastWorkedOn().compareTo(a.getLastWorkedOn()))
-                    .toList();
+                    .sorted((a, b) -> b.getLastWorkedOn().compareTo(a.getLastWorkedOn())).toList();
         };
-    }
-
-    private boolean hasAnyFilter(String search, ProjectStatus status, Boolean onGithub) {
-        return (search != null && !search.isEmpty()) || status != null || onGithub != null;
     }
 
     private boolean hasFilters(String search, ProjectStatus status, Boolean onGithub,

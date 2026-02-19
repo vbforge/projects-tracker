@@ -70,10 +70,11 @@ public class ProjectMapper {
 
     /**
      * Convert ProjectDTO to Project entity
-     * Note: Tags must be handled separately in the service layer
+     * NOTE: Owner and tags must be handled separately in the service layer!
+     * This is by design - the owner should come from SecurityContext, not from DTO.
      *
      * @param dto the DTO
-     * @return the entity
+     * @return the entity (without owner or tags set)
      */
     public Project toEntity(ProjectDTO dto) {
         if (dto == null) {
@@ -89,13 +90,15 @@ public class ProjectMapper {
                 .githubUrl(dto.getGithubUrl())
                 .localPath(dto.getLocalPath())
                 .whatTodo(dto.getWhatTodo())
+                // NOTE: owner is NOT set here - it must be set in the service layer
+                // NOTE: tags are NOT set here - they're handled separately in the service layer
                 .build();
     }
 
     /**
      * Update existing Project entity from ProjectDTO
      * This method updates only the fields that should be updated,
-     * preserving timestamps and relationships
+     * preserving timestamps, relationships, and owner
      *
      * @param project the existing entity
      * @param dto the DTO with new values
@@ -113,6 +116,7 @@ public class ProjectMapper {
         project.setLocalPath(dto.getLocalPath());
         project.setWhatTodo(dto.getWhatTodo());
         // Note: createdDate, lastWorkedOn, updatedAt are managed by @PrePersist/@PreUpdate
-        // Tags are managed separately in the service layer
+        // Note: tags are managed separately in the service layer
+        // Note: owner is NOT updated - it's immutable
     }
 }

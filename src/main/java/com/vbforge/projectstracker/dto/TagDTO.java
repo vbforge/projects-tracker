@@ -1,16 +1,16 @@
 package com.vbforge.projectstracker.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Data Transfer Object for Tag
- * Used for receiving data from forms and sending data to views
- */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,28 +19,22 @@ public class TagDTO {
     private Long id;
 
     @NotBlank(message = "Tag name is required")
-    @Size(min = 2, max = 100, message = "Tag name must be between 2 and 100 characters")
-    @Pattern(
-            regexp = "^[a-zA-Z0-9\\s\\-\\.#+]+$",
-            message = "Tag name can only contain letters, numbers, spaces, hyphens, dots, hash, and plus signs"
-    )
+    @Size(min = 1, max = 100, message = "Tag name must be between 1 and 100 characters")
     private String name;
 
-    @NotBlank(message = "Color is required")
-    @Pattern(
-            regexp = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
-            message = "Color must be a valid hex color code (e.g., #FF5733 or #F57)"
-    )
+    @Pattern(regexp = "^#[0-9A-Fa-f]{6}$", message = "Color must be a valid hex code (e.g., #e7f3ff)")
     @Builder.Default
     private String color = "#e7f3ff";
 
-    @Size(max = 250, message = "Description cannot exceed 250 characters")
+    @Size(max = 250, message = "Description must not exceed 250 characters")
     private String description;
 
+    // Read-only fields from entity (used in tags list view)
     private LocalDateTime createdDate;
-
     private LocalDateTime updatedAt;
-
-    // Number of projects using this tag (for display purposes)
     private Integer projectCount;
+
+    public Integer getProjectCount() {
+        return projectCount;
+    }
 }

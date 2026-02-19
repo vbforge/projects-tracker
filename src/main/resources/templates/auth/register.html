@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register – Project Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/main-styles.css}">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+            padding: 2rem 1rem;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 460px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 2.5rem;
+        }
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .auth-logo .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .auth-logo .brand-sub {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .auth-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        .auth-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-register:hover {
+            background: linear-gradient(135deg, #162d6b 0%, #1b3c96 100%);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            text-align: center;
+            position: relative;
+            margin: 1.25rem 0;
+        }
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+        .divider span {
+            background: var(--bg-primary);
+            padding: 0 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            position: relative;
+        }
+        .field-hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <!-- Logo -->
+    <div class="auth-logo">
+        <img th:src="@{/images/logo.svg}" alt="Logo" width="48" height="48" class="mb-2">
+        <div class="brand-name">Project Tracker</div>
+        <div class="brand-sub">Start managing your projects today</div>
+    </div>
+
+    <div class="auth-title">Create your account</div>
+    <div class="auth-subtitle">Free forever. No credit card required.</div>
+
+    <!-- Alerts -->
+    <div th:if="${errorMessage}" class="alert alert-danger py-2 small" th:text="${errorMessage}"></div>
+
+    <!-- Registration Form -->
+    <form th:action="@{/register}" th:object="${registerDTO}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+        <!-- Username -->
+        <div class="mb-3">
+            <div class="form-floating">
+                <input type="text"
+                       class="form-control"
+                       th:class="${#fields.hasErrors('username')} ? 'form-control is-invalid' : 'form-control'"
+                       id="username"
+                       th:field="*{username}"
+                       placeholder="Username"
+                       required
+                       autofocus>
+                <label for="username">
+                    <i class="bi bi-person me-1"></i> Username
+                </label>
+            </div>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}"
+                 th:errors="*{username}"></div>
+            <div class="field-hint" th:if="${!#fields.hasErrors('username')}">
+                3–50 characters
+            </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            <div class="form-floating">
+                <input type="email"
+                       class="form-control"
+                       th:class="${#fields.hasErrors('email')} ? 'form-control is-invalid' : 'form-control'"
+                       id="email"
+                       th:field="*{email}"
+                       placeholder="Email"
+                       required>
+                <label for="email">
+                    <i class="bi bi-envelope me-1"></i> Email address
+                </label>
+            </div>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
+                 th:errors="*{email}"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+            <div class="form-floating">
+                <input type="password"
+                       class="form-control"
+                       th:class="${#fields.hasErrors('password')} ? 'form-control is-invalid' : 'form-control'"
+                       id="password"
+                       th:field="*{password}"
+                       placeholder="Password"
+                       required>
+                <label for="password">
+                    <i class="bi bi-lock me-1"></i> Password
+                </label>
+            </div>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
+                 th:errors="*{password}"></div>
+            <div class="field-hint" th:if="${!#fields.hasErrors('password')}">
+                At least 6 characters
+            </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="mb-4">
+            <div class="form-floating">
+                <input type="password"
+                       class="form-control"
+                       th:class="${#fields.hasErrors('confirmPassword')} ? 'form-control is-invalid' : 'form-control'"
+                       id="confirmPassword"
+                       th:field="*{confirmPassword}"
+                       placeholder="Confirm Password"
+                       required>
+                <label for="confirmPassword">
+                    <i class="bi bi-lock-fill me-1"></i> Confirm password
+                </label>
+            </div>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}"
+                 th:errors="*{confirmPassword}"></div>
+        </div>
+
+        <button type="submit" class="btn btn-register w-100 mb-3">
+            <i class="bi bi-person-check me-2"></i>Create Account
+        </button>
+    </form>
+
+    <div class="divider"><span>Already have an account?</span></div>
+
+    <a th:href="@{/login}" class="btn btn-outline-secondary w-100">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+    </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -2,8 +2,10 @@ package com.vbforge.projectstracker.controller;
 
 import com.vbforge.projectstracker.entity.Project;
 import com.vbforge.projectstracker.entity.ProjectStatus;
+import com.vbforge.projectstracker.entity.User;
 import com.vbforge.projectstracker.service.ExportService;
 import com.vbforge.projectstracker.service.ProjectFilterService;
+import com.vbforge.projectstracker.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +31,7 @@ public class ExportController {
 
     private final ProjectFilterService filterService;
     private final ExportService exportService;
+    private final SecurityUtils securityUtils;
 
     /**
      * Export filtered projects to CSV format
@@ -43,21 +46,22 @@ public class ExportController {
             @RequestParam(required = false) String lastWorkedMonth,
             @RequestParam(required = false, defaultValue = "lastWorked") String sortBy) {
 
-        log.info("Exporting projects to CSV with filters");
+        User currentUser = securityUtils.getCurrentUser();
+        log.info("Exporting projects to CSV for user: {}", currentUser.getUsername());
 
         // Get filtered and sorted projects using FilterService
         List<Project> projects = filterService.getFilteredAndSortedProjects(
-                search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy
+                search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy, currentUser
         );
 
         // Export to CSV
-        byte[] csvData = exportService.exportToCSV(projects);
+        byte[] csvData = exportService.exportToCSV(projects, currentUser);
 
         // Generate filename with timestamp
         String filename = "projects_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv";
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + "_" + currentUser.getUsername() + "_.csv";
 
-        log.info("Exported {} projects to CSV: {}", projects.size(), filename);
+        log.info("Exported {} projects to CSV: {} for user {}", projects.size(), filename, currentUser.getUsername());
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
@@ -78,11 +82,12 @@ public class ExportController {
             @RequestParam(required = false) String lastWorkedMonth,
             @RequestParam(required = false, defaultValue = "lastWorked") String sortBy) {
 
-        log.info("Exporting projects to HTML with filters");
+        User currentUser = securityUtils.getCurrentUser();
+        log.info("Exporting projects to HTML for user: {}", currentUser.getUsername());
 
         // Get filtered and sorted projects using FilterService
         List<Project> projects = filterService.getFilteredAndSortedProjects(
-                search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy
+                search, status, onGithub, tags, createdMonth, lastWorkedMonth, sortBy, currentUser
         );
 
         // Build filter description for the report
@@ -91,10 +96,10 @@ public class ExportController {
         );
 
         // Export to HTML
-        byte[] htmlData = exportService.exportToHTML(projects, filterDescription);
+        byte[] htmlData = exportService.exportToHTML(projects, filterDescription,  currentUser);
 
         // Generate filename with timestamp
-        String filename = "projects_report_" +
+        String filename = "projects_report_[" + currentUser.getUsername() + "]_" +
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".html";
 
         log.info("Exported {} projects to HTML: {}", projects.size(), filename);

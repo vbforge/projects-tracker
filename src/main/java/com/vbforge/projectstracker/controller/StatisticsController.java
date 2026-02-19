@@ -1,7 +1,9 @@
 package com.vbforge.projectstracker.controller;
 
 import com.vbforge.projectstracker.dto.ProjectDTO;
+import com.vbforge.projectstracker.entity.User;
 import com.vbforge.projectstracker.service.StatisticsService;
+import com.vbforge.projectstracker.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -20,23 +22,25 @@ import java.util.*;
 public class StatisticsController {
 
     private final StatisticsService statisticsService;
+    private final SecurityUtils securityUtils;
 
     @GetMapping
     public String showStatistics(Model model) {
-        log.info("Loading statistics dashboard");
+        User currentUser = securityUtils.getCurrentUser();
+        log.info("Loading statistics dashboard for user: {}", currentUser.getUsername());
 
         try {
             // Quick Stats
-            long totalProjects = statisticsService.getTotalProjects();
-            double completionRate = statisticsService.getCompletionRate();
-            double avgDaysSinceWorked = statisticsService.getAverageDaysSinceLastWorked();
+            long totalProjects = statisticsService.getTotalProjects(currentUser);
+            double completionRate = statisticsService.getCompletionRate(currentUser);
+            double avgDaysSinceWorked = statisticsService.getAverageDaysSinceLastWorked(currentUser);
 
             model.addAttribute("totalProjects", totalProjects);
             model.addAttribute("completionRate", completionRate);
             model.addAttribute("avgDaysSinceWorked", avgDaysSinceWorked);
 
             // Chart 1: Projects by Status
-            Map<String, Long> statusData = statisticsService.getProjectsByStatus();
+            Map<String, Long> statusData = statisticsService.getProjectsByStatus(currentUser);
             List<String> statusLabels = new ArrayList<>(statusData.keySet());
             List<Long> statusValues = new ArrayList<>(statusData.values());
 
@@ -46,7 +50,7 @@ public class StatisticsController {
             model.addAttribute("statusData", statusValues);
 
             // Chart 2: GitHub vs Local
-            Map<String, Long> githubData = statisticsService.getGitHubVsLocal();
+            Map<String, Long> githubData = statisticsService.getGitHubVsLocal(currentUser);
             List<String> githubLabels = new ArrayList<>(githubData.keySet());
             List<Long> githubValues = new ArrayList<>(githubData.values());
 
@@ -56,7 +60,7 @@ public class StatisticsController {
             model.addAttribute("githubData", githubValues);
 
             // Chart 3: Projects Created Over Time
-            Map<String, Long> timelineData = statisticsService.getProjectsCreatedByMonth();
+            Map<String, Long> timelineData = statisticsService.getProjectsCreatedByMonth(currentUser);
 
             // Convert YYYY-MM to readable month names
             List<String> timelineLabels = new ArrayList<>();
@@ -79,7 +83,7 @@ public class StatisticsController {
             model.addAttribute("timelineData", timelineValues);
 
             // Chart 4: Top Tags
-            Map<String, Long> topTags = statisticsService.getTopTags(10);
+            Map<String, Long> topTags = statisticsService.getTopTags(10, currentUser);
             List<String> tagLabels = new ArrayList<>(topTags.keySet());
             List<Long> tagValues = new ArrayList<>(topTags.values());
 
@@ -89,7 +93,7 @@ public class StatisticsController {
             model.addAttribute("tagData", tagValues);
 
             // Chart 5: Activity Heatmap (Projects by days since last worked)
-            List<ProjectDTO> activityData = statisticsService.getProjectActivityData();
+            List<ProjectDTO> activityData = statisticsService.getProjectActivityData(currentUser);
 
             log.info("Activity data - {} projects found", activityData != null ? activityData.size() : 0);
 
