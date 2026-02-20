@@ -3,6 +3,7 @@ package com.vbforge.projectstracker.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -19,6 +20,7 @@ import javax.sql.DataSource;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@Profile("!test")   // ← disable this config when profile=test
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
@@ -31,7 +33,8 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService); //todo: check
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
@@ -44,7 +47,7 @@ public class SecurityConfig {
     @Bean
     public PersistentTokenRepository persistentTokenRepository() {
         JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
-        tokenRepository.setDataSource(dataSource);  //todo: check
+        tokenRepository.setDataSource(dataSource);
         return tokenRepository;
     }
 
@@ -62,8 +65,8 @@ public class SecurityConfig {
                 )
 
                 .formLogin(form -> form
-                        .loginPage("/login")            // Our custom login page
-                        .loginProcessingUrl("/login")   // Spring Security handles POST /login
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
                         .defaultSuccessUrl("/projects", true)
                         .failureUrl("/login?error=true")
                         .usernameParameter("username")
@@ -84,11 +87,9 @@ public class SecurityConfig {
                         .tokenValiditySeconds(30 * 24 * 60 * 60)  // 30 days
                         .userDetailsService(userDetailsService)
                         .rememberMeParameter("remember-me")
-                )
+                );
 
-        // CSRF is enabled by default (good!) — Thymeleaf adds tokens automatically
-        ;
-
+        // CSRF is enabled by default
         return http.build();
     }
 
