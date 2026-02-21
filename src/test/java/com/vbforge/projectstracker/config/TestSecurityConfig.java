@@ -30,8 +30,22 @@ public class TestSecurityConfig {
     @Primary
     SecurityFilterChain testSecurity(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                .csrf(AbstractHttpConfigurer::disable) // disable CSRF for tests
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login") //important: use my controller
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/projects", true)
+                        .failureUrl("/login?error=true")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
+                        .permitAll()
+                )
+                .logout(logout -> logout.permitAll());
+
         return http.build();
     }
 }
