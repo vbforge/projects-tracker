@@ -1,5 +1,7 @@
 # 🧪 Project Tracker - Testing Scenarios
 
+---
+
 ## Pre-Test Setup
 - ✅ Database is clean or has test data
 - ✅ App is running on `http://localhost:8080`
