@@ -20,7 +20,6 @@ import javax.sql.DataSource;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@Profile("!test")   // ← disable this config when profile=test
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;

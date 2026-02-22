@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(TestSecurityConfig.class)
+//@Import(TestSecurityConfig.class)
 @Transactional
 class SchemaLoadTest {
 
