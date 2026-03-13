@@ -1,0 +1,33 @@
+services:
+  app:
+    image: vladbogdadocker/projects-tracker:latest
+    container_name: projects-tracker-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://db:3306/projects_tracker?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  db:
+    image: mysql:8.0
+    container_name: projects-tracker-db
+    environment:
+      MYSQL_DATABASE: projects_tracker
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
